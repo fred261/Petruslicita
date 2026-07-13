@@ -7,6 +7,9 @@ import { UsuariosPage } from "@/pages/UsuariosPage";
 import { ClientesListPage } from "@/pages/ClientesListPage";
 import { ClienteNovoPage } from "@/pages/ClienteNovoPage";
 import { ClienteFichaPage } from "@/pages/ClienteFichaPage";
+import { RadarEditaisPage } from "@/pages/RadarEditaisPage";
+import { EditalNovoPage } from "@/pages/EditalNovoPage";
+import { EditalFichaPage } from "@/pages/EditalFichaPage";
 import { USER_MANAGER_ROLES } from "@petrus/shared";
 
 export default function App() {
@@ -49,6 +52,36 @@ export default function App() {
           <ProtectedRoute>
             <AppShell>
               <ClienteFichaPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/editais"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <RadarEditaisPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/editais/novo"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <EditalNovoPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/editais/:id"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <EditalFichaPage />
             </AppShell>
           </ProtectedRoute>
         }

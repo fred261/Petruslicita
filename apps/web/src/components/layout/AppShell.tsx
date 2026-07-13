@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { Building2, LayoutDashboard, LogOut, Menu, Users, X } from "lucide-react";
+import { Building2, LayoutDashboard, LogOut, Menu, Radar, Users, X } from "lucide-react";
 import clsx from "clsx";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth-context";
@@ -8,6 +8,7 @@ import { ROLE_LABELS, USER_MANAGER_ROLES } from "@petrus/shared";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, roles: undefined },
+  { to: "/editais", label: "Radar de Editais", icon: Radar, roles: undefined },
   { to: "/clientes", label: "Clientes", icon: Building2, roles: undefined },
   { to: "/usuarios", label: "Usuários", icon: Users, roles: USER_MANAGER_ROLES },
 ];

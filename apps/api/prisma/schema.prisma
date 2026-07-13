@@ -26,83 +26,118 @@ enum AcaoAuditoria {
   DELETE
 }
 
+/// Identifica o adaptador de portal que originou a licitação — hoje só PNCP,
+/// desenhado para plugar futuros portais municipais/estaduais.
+enum FonteLicitacao {
+  PNCP
+  MANUAL
+}
+
+enum OrigemItem {
+  AUTO_IMPORTADO
+  MANUAL
+}
+
+enum OrigemParticipacao {
+  SUGESTAO_MATCHING
+  MANUAL
+}
+
+/// Fluxo de status da Participação (spec: "Fluxo de Status da Participação").
+enum StatusParticipacao {
+  SUGERIDA
+  EM_ANALISE
+  DESCARTADA
+  EM_PREPARACAO
+  ENVIADA
+  EM_DISPUTA
+  HABILITACAO
+  RECURSAL
+  VENCEDORA
+  NAO_VENCEDORA
+  HOMOLOGADA
+  CONTRATADA
+}
+
 model Usuario {
-  id                  String   @id @default(cuid())
-  nome                String
-  email               String   @unique
-  senhaHash           String
-  papel               Papel
-  ativo               Boolean  @default(true)
+  id        String  @id @default(cuid())
+  nome      String
+  email     String  @unique
+  senhaHash String
+  papel     Papel
+  ativo     Boolean @default(true)
 
   // Segurança / login
-  totpSecret          String?
-  totpEnabled         Boolean  @default(false)
-  tentativasFalhas     Int      @default(0)
-  bloqueadoAte         DateTime?
-  ultimoAcessoEm       DateTime?
+  totpSecret       String?
+  totpEnabled      Boolean   @default(false)
+  tentativasFalhas Int       @default(0)
+  bloqueadoAte     DateTime?
+  ultimoAcessoEm   DateTime?
 
   clientes            UsuarioCliente[]
   refreshTokens       RefreshToken[]
   accessLogs          AccessLog[]
   auditLogs           AuditLog[]
-  clientesResponsavel Cliente[] @relation("ClienteResponsavel")
+  clientesResponsavel Cliente[]        @relation("ClienteResponsavel")
+  participacoes       Participacao[]   @relation("ParticipacaoResponsavel")
+  eventos             Evento[]
 
-  criadoEm            DateTime @default(now())
-  atualizadoEm        DateTime @updatedAt
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   @@map("usuarios")
 }
 
 /// Vínculo Usuário x Cliente — usado para escopo de Operador e (futuramente) Empresa.
 model UsuarioCliente {
-  id         String   @id @default(cuid())
-  usuarioId  String
-  clienteId  String
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  criadoEm   DateTime @default(now())
+  id        String   @id @default(cuid())
+  usuarioId String
+  clienteId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cliente   Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  criadoEm  DateTime @default(now())
 
   @@unique([usuarioId, clienteId])
   @@map("usuarios_clientes")
 }
 
 model RefreshToken {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   usuarioId  String
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  tokenHash  String   @unique
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
   expiraEm   DateTime
   revogadoEm DateTime?
-  criadoEm   DateTime @default(now())
+  criadoEm   DateTime  @default(now())
 
   @@map("refresh_tokens")
 }
 
 model AccessLog {
-  id         String   @id @default(cuid())
-  usuarioId  String?
-  usuario    Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  email      String
-  ip         String?
-  userAgent  String?
-  sucesso    Boolean
-  motivo     String?
-  criadoEm   DateTime @default(now())
+  id        String   @id @default(cuid())
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  email     String
+  ip        String?
+  userAgent String?
+  sucesso   Boolean
+  motivo    String?
+  criadoEm  DateTime @default(now())
 
   @@map("access_logs")
 }
 
 /// Log de auditoria por alteração em entidades sensíveis (quem, o quê, quando).
 model AuditLog {
-  id           String        @id @default(cuid())
-  usuarioId    String?
-  usuario      Usuario?      @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  entidade     String
-  entidadeId   String
-  acao         AcaoAuditoria
-  dadosAntes   Json?
-  dadosDepois  Json?
-  criadoEm     DateTime      @default(now())
+  id          String        @id @default(cuid())
+  usuarioId   String?
+  usuario     Usuario?      @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  entidade    String
+  entidadeId  String
+  acao        AcaoAuditoria
+  dadosAntes  Json?
+  dadosDepois Json?
+  criadoEm    DateTime      @default(now())
 
   @@index([entidade, entidadeId])
   @@map("audit_logs")
@@ -111,15 +146,15 @@ model AuditLog {
 /// Empresa-cliente do escritório (tenant lógico). O CNAE e dados cadastrais
 /// nascem uma única vez, via consulta de CNPJ, e ficam travados para edição direta.
 model Cliente {
-  id                     String         @id @default(cuid())
+  id String @id @default(cuid())
 
   // --- Bloco travado (somente via consulta de CNPJ) ---
-  cnpj                   String         @unique
+  cnpj                   String   @unique
   razaoSocial            String
   nomeFantasia           String?
   cnaePrincipalCodigo    String
   cnaePrincipalDescricao String
-  cnaesSecundarios       Json           @default("[]")
+  cnaesSecundarios       Json     @default("[]")
   situacaoCadastral      String
   enderecoLogradouro     String?
   enderecoNumero         String?
@@ -131,18 +166,136 @@ model Cliente {
   dadosApiAtualizadosEm  DateTime
 
   // --- Camada complementar editável ---
-  palavrasChave          Json           @default("[]")
-  ufsInteresse           String[]       @default([])
-  valorMinimoInteresse   Decimal?       @db.Decimal(14, 2)
-  valorMaximoInteresse   Decimal?       @db.Decimal(14, 2)
-  responsavelId          String?
-  responsavel            Usuario?       @relation("ClienteResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
-  status                 StatusCliente  @default(ATIVO)
+  palavrasChave        Json          @default("[]")
+  ufsInteresse         String[]      @default([])
+  valorMinimoInteresse Decimal?      @db.Decimal(14, 2)
+  valorMaximoInteresse Decimal?      @db.Decimal(14, 2)
+  responsavelId        String?
+  responsavel          Usuario?      @relation("ClienteResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
+  status               StatusCliente @default(ATIVO)
 
-  usuarios               UsuarioCliente[]
+  usuarios      UsuarioCliente[]
+  participacoes Participacao[]
 
-  criadoEm               DateTime       @default(now())
-  atualizadoEm           DateTime       @updatedAt
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   @@map("clientes")
+}
+
+/// Licitação/edital — entidade global compartilhada entre clientes, nunca
+/// duplicada por cliente. Uma mesma licitação pode ter várias Participações,
+/// uma por cliente concorrente nela.
+model Licitacao {
+  id String @id @default(cuid())
+
+  fonte                    FonteLicitacao
+  idExterno                String?
+  orgaoCnpj                String
+  orgaoNome                String
+  esfera                   String?
+  numeroProcesso           String
+  modalidadeCodigo         String?
+  modalidadeNome           String
+  objeto                   String
+  valorEstimado            Decimal?       @db.Decimal(16, 2)
+  uf                       String
+  municipio                String?
+  dataPublicacao           DateTime?
+  dataLimiteImpugnacao     DateTime?
+  dataLimiteEsclarecimento DateTime?
+  dataSessaoAbertura       DateTime?
+  linkEdital               String?
+  situacao                 String?
+
+  /// Marca quando os itens/lotes foram buscados pela última vez — a listagem
+  /// geral do PNCP não traz itens embutidos, então só disparamos a chamada de
+  /// detalhe quando a licitação recebe sugestão/participação (evita volume
+  /// desnecessário de chamadas).
+  itensCaptadosEm DateTime?
+
+  itens         Item[]
+  participacoes Participacao[]
+  eventos       Evento[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([fonte, numeroProcesso, orgaoCnpj])
+  @@index([uf])
+  @@index([fonte, idExterno])
+  @@map("licitacoes")
+}
+
+/// Item/lote de uma licitação (subset dos quais uma Participação disputa).
+model Item {
+  id          String    @id @default(cuid())
+  licitacaoId String
+  licitacao   Licitacao @relation(fields: [licitacaoId], references: [id], onDelete: Cascade)
+
+  numero                Int
+  descricao             String
+  unidadeMedida         String?
+  quantidade            Decimal    @db.Decimal(14, 3)
+  valorUnitarioEstimado Decimal?   @db.Decimal(16, 4)
+  valorTotalEstimado    Decimal?   @db.Decimal(16, 2)
+  /// Situação bruta conforme domínio do PNCP (aberto, cancelado, deserto,
+  /// fracassado, homologado...), armazenada como texto por variar por fonte.
+  situacao              String?
+  origem                OrigemItem @default(AUTO_IMPORTADO)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([licitacaoId, numero])
+  @@map("itens")
+}
+
+/// Cliente x Licitação — núcleo do pipeline. Criada apenas por ação humana
+/// ("Criar Participação"), nunca automaticamente pelo motor de matching.
+/// A tela completa de gestão do pipeline (prazos, cobrança, mudança de
+/// status) é entregue no módulo de Pipeline de Participação.
+model Participacao {
+  id String @id @default(cuid())
+
+  clienteId   String
+  cliente     Cliente   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  licitacaoId String
+  licitacao   Licitacao @relation(fields: [licitacaoId], references: [id], onDelete: Cascade)
+
+  status        StatusParticipacao @default(SUGERIDA)
+  origem        OrigemParticipacao
+  responsavelId String?
+  responsavel   Usuario?           @relation("ParticipacaoResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
+  observacoes   String?
+
+  eventos Evento[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([clienteId, licitacaoId])
+  @@map("participacoes")
+}
+
+/// Histórico imutável de eventos — vinculado a Licitação e/ou Participação.
+model Evento {
+  id String @id @default(cuid())
+
+  tipo      String
+  descricao String
+  autorId   String?
+  autor     Usuario? @relation(fields: [autorId], references: [id], onDelete: SetNull)
+  anexoUrl  String?
+
+  licitacaoId    String?
+  licitacao      Licitacao?    @relation(fields: [licitacaoId], references: [id], onDelete: Cascade)
+  participacaoId String?
+  participacao   Participacao? @relation(fields: [participacaoId], references: [id], onDelete: Cascade)
+
+  criadoEm DateTime @default(now())
+
+  @@index([licitacaoId])
+  @@index([participacaoId])
+  @@map("eventos")
 }

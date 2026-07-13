@@ -12,6 +12,7 @@ const envSchema = z.object({
   LOGIN_LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
   CNPJ_LOOKUP_PRIMARY_URL: z.string().url().default("https://brasilapi.com.br/api/cnpj/v1"),
   CNPJ_LOOKUP_FALLBACK_URL: z.string().url().default("https://publica.cnpj.ws/cnpj"),
+  PNCP_BASE_URL: z.string().url().default("https://pncp.gov.br/api/consulta"),
   API_PORT: z.coerce.number().int().positive().default(3333),
   WEB_URL: z.string().default("http://localhost:5173"),
 });

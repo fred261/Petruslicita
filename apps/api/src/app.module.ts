@@ -5,9 +5,12 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { validateEnv } from "./config/env.validation";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuditModule } from "./audit/audit.module";
+import { EventosModule } from "./eventos/eventos.module";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
 import { ClientesModule } from "./clientes/clientes.module";
+import { LicitacoesModule } from "./licitacoes/licitacoes.module";
+import { ParticipacoesModule } from "./participacoes/participacoes.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 
@@ -17,9 +20,12 @@ import { RolesGuard } from "./common/guards/roles.guard";
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
     AuditModule,
+    EventosModule,
     AuthModule,
     UsersModule,
     ClientesModule,
+    LicitacoesModule,
+    ParticipacoesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
