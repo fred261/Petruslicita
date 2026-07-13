@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { STATUS_PARTICIPACAO_LABELS } from "@petrus/shared";
 import { Button } from "@/components/ui/Button";
@@ -177,10 +177,14 @@ export function EditalFichaPage() {
               <p className="text-sm text-ink-500">Nenhuma participação criada para este edital ainda.</p>
             ) : (
               (participacoesQuery.data ?? []).map((p) => (
-                <div key={p.id} className="flex items-center justify-between text-sm">
+                <Link
+                  key={p.id}
+                  to={`/participacoes/${p.id}`}
+                  className="flex items-center justify-between text-sm hover:underline"
+                >
                   <span className="text-ink-900">{p.clienteRazaoSocial}</span>
                   <Badge tone="gold">{STATUS_PARTICIPACAO_LABELS[p.status]}</Badge>
-                </div>
+                </Link>
               ))
             )}
           </CardContent>

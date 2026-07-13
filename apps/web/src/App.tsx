@@ -10,6 +10,7 @@ import { ClienteFichaPage } from "@/pages/ClienteFichaPage";
 import { RadarEditaisPage } from "@/pages/RadarEditaisPage";
 import { EditalNovoPage } from "@/pages/EditalNovoPage";
 import { EditalFichaPage } from "@/pages/EditalFichaPage";
+import { ParticipacaoFichaPage } from "@/pages/ParticipacaoFichaPage";
 import { USER_MANAGER_ROLES } from "@petrus/shared";
 
 export default function App() {
@@ -82,6 +83,16 @@ export default function App() {
           <ProtectedRoute>
             <AppShell>
               <EditalFichaPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/participacoes/:id"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <ParticipacaoFichaPage />
             </AppShell>
           </ProtectedRoute>
         }

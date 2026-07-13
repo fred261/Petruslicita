@@ -43,6 +43,15 @@ enum OrigemParticipacao {
   MANUAL
 }
 
+enum MotivoPerdaCategoria {
+  PRECO_SUPERIOR
+  DESCLASSIFICACAO_TECNICA
+  INABILITACAO_DOCUMENTAL
+  DESISTENCIA_PROPRIA
+  REVOGACAO_ANULACAO
+  OUTRO
+}
+
 /// Fluxo de status da Participação (spec: "Fluxo de Status da Participação").
 enum StatusParticipacao {
   SUGERIDA
@@ -81,6 +90,7 @@ model Usuario {
   clientesResponsavel Cliente[]        @relation("ClienteResponsavel")
   participacoes       Participacao[]   @relation("ParticipacaoResponsavel")
   eventos             Evento[]
+  comentarios         Comentario[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -244,6 +254,8 @@ model Item {
   situacao              String?
   origem                OrigemItem @default(AUTO_IMPORTADO)
 
+  participacoes ParticipacaoItem[]
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -269,13 +281,58 @@ model Participacao {
   responsavel   Usuario?           @relation("ParticipacaoResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
   observacoes   String?
 
-  eventos Evento[]
+  /// Dispara a cobrança automática de atualização (motor de prazos).
+  proximoPrazo  DateTime?
+  valorProposto Decimal?  @db.Decimal(16, 2)
+  dataDecisao   DateTime?
+
+  // --- Motivo de perda (estruturado — vira estatística) ---
+  motivoPerdaCategoria         MotivoPerdaCategoria?
+  motivoPerdaTexto             String?
+  concorrenteVencedorNome      String?
+  concorrenteVencedorCnpj      String?
+  valorPropostaVencedora       Decimal?              @db.Decimal(16, 2)
+  /// (propostaVencedora - valorProposto) / valorProposto * 100 — calculado no servidor.
+  diferencaPercentualVencedora Decimal?              @db.Decimal(7, 2)
+
+  itens       ParticipacaoItem[]
+  eventos     Evento[]
+  comentarios Comentario[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   @@unique([clienteId, licitacaoId])
+  @@index([proximoPrazo])
   @@map("participacoes")
+}
+
+/// Subset dos Itens da Licitação que a Participação está disputando.
+model ParticipacaoItem {
+  id             String       @id @default(cuid())
+  participacaoId String
+  participacao   Participacao @relation(fields: [participacaoId], references: [id], onDelete: Cascade)
+  itemId         String
+  item           Item         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  criadoEm       DateTime     @default(now())
+
+  @@unique([participacaoId, itemId])
+  @@map("participacao_itens")
+}
+
+/// Colaboração interna — anotações visíveis apenas à equipe do escritório,
+/// nunca ao perfil Empresa.
+model Comentario {
+  id             String       @id @default(cuid())
+  participacaoId String
+  participacao   Participacao @relation(fields: [participacaoId], references: [id], onDelete: Cascade)
+  autorId        String?
+  autor          Usuario?     @relation(fields: [autorId], references: [id], onDelete: SetNull)
+  texto          String
+  criadoEm       DateTime     @default(now())
+
+  @@index([participacaoId])
+  @@map("comentarios")
 }
 
 /// Histórico imutável de eventos — vinculado a Licitação e/ou Participação.

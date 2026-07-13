@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { MODALIDADES_PNCP, UFS } from "@petrus/shared";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -18,6 +18,7 @@ export function RadarEditaisPage() {
   const { user } = useAuth();
   const ehGestor = user?.papel === "MASTER" || user?.papel === "ADMIN";
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [clienteId, setClienteId] = useState("");
   const [uf, setUf] = useState("");
@@ -40,8 +41,9 @@ export function RadarEditaisPage() {
 
   const criarParticipacaoMutation = useMutation({
     mutationFn: criarParticipacao,
-    onSuccess: () => {
+    onSuccess: (participacao) => {
       queryClient.invalidateQueries({ queryKey: ["licitacoes"] });
+      navigate(`/participacoes/${participacao.id}`);
     },
   });
 
