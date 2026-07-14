@@ -75,7 +75,16 @@ export const MOTIVO_PERDA_CATEGORIA_LABELS: Record<MotivoPerdaCategoria, string>
 };
 
 /** Fases do funil do dashboard, agrupando os status internos (spec: "Funil do Dashboard"). */
-export type FaseFunil = "CAPTACAO" | "PREPARACAO" | "EM_DISPUTA" | "VENCIDAS_E_PERDIDAS" | "FORA_DO_FUNIL";
+export const FASE_FUNIL = ["CAPTACAO", "PREPARACAO", "EM_DISPUTA", "VENCIDAS_E_PERDIDAS", "FORA_DO_FUNIL"] as const;
+export type FaseFunil = (typeof FASE_FUNIL)[number];
+
+export const FASE_FUNIL_LABELS: Record<FaseFunil, string> = {
+  CAPTACAO: "Captação",
+  PREPARACAO: "Preparação",
+  EM_DISPUTA: "Em disputa",
+  VENCIDAS_E_PERDIDAS: "Vencidas e perdidas",
+  FORA_DO_FUNIL: "Fora do funil",
+};
 
 export const FASE_FUNIL_POR_STATUS: Record<StatusParticipacao, FaseFunil> = {
   SUGERIDA: "CAPTACAO",
