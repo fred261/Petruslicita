@@ -7,7 +7,7 @@
     "build": "nest build",
     "start": "node dist/src/main.js",
     "lint": "tsc --noEmit",
-    "test": "echo \"no tests yet\"",
+    "test": "vitest run",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
@@ -51,6 +51,7 @@
     "@types/qrcode": "^1.5.5",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.10"
   }
 }
