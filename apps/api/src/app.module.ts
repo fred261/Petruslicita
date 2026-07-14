@@ -15,6 +15,7 @@ import { LicitacoesModule } from "./licitacoes/licitacoes.module";
 import { ParticipacoesModule } from "./participacoes/participacoes.module";
 import { PrazosModule } from "./prazos/prazos.module";
 import { DocumentosModule } from "./documentos/documentos.module";
+import { ContratosModule } from "./contratos/contratos.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 
@@ -46,6 +47,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     ParticipacoesModule,
     PrazosModule,
     DocumentosModule,
+    ContratosModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

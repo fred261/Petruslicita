@@ -11,6 +11,7 @@ export function executarVerificacaoAgora() {
     cobrancasEnviadas: number;
     escalonamentosEnviados: number;
     alertasDocumentosEnviados: number;
+    alertasContratosEnviados: number;
   }>("/prazos/executar-agora", { method: "POST" });
 }
 

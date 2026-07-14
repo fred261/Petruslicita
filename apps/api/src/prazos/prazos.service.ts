@@ -14,12 +14,14 @@ interface ResumoExecucao {
   cobrancasEnviadas: number;
   escalonamentosEnviados: number;
   alertasDocumentosEnviados: number;
+  alertasContratosEnviados: number;
 }
 
 const TIPO_COBRANCA_PRAZO = "COBRANCA_PRAZO";
 const TIPO_COBRANCA_SEM_PRAZO = "COBRANCA_SEM_PRAZO";
 const TIPO_ESCALONAMENTO = "ESCALONAMENTO";
 const TIPO_DOCUMENTO_VENCENDO = "DOCUMENTO_VENCENDO";
+const TIPO_CONTRATO_VENCENDO = "CONTRATO_VENCENDO";
 
 @Injectable()
 export class PrazosService {
@@ -96,9 +98,10 @@ export class PrazosService {
 
     const escalonamentosEnviados = await this.executarEscalonamento(config.toleranciaEscalonamentoHoras);
     const alertasDocumentosEnviados = await this.verificarDocumentosVencendo(config.diasAntecedenciaPrazo);
+    const alertasContratosEnviados = await this.verificarContratosVencendo(config.diasAntecedenciaPrazo);
 
     this.logger.log(
-      `Verificação de prazos concluída: ${participacoes.length} participações avaliadas, ${cobrancasEnviadas} cobrança(s), ${escalonamentosEnviados} escalonamento(s), ${alertasDocumentosEnviados} alerta(s) de documento.`,
+      `Verificação de prazos concluída: ${participacoes.length} participações avaliadas, ${cobrancasEnviadas} cobrança(s), ${escalonamentosEnviados} escalonamento(s), ${alertasDocumentosEnviados} alerta(s) de documento, ${alertasContratosEnviados} alerta(s) de contrato.`,
     );
 
     return {
@@ -106,7 +109,50 @@ export class PrazosService {
       cobrancasEnviadas,
       escalonamentosEnviados,
       alertasDocumentosEnviados,
+      alertasContratosEnviados,
     };
+  }
+
+  /** Vigência contratual — alerta automático antes do vencimento. */
+  private async verificarContratosVencendo(diasAntecedencia: number): Promise<number> {
+    const agora = new Date();
+    const limite = new Date(agora.getTime() + diasAntecedencia * 24 * 60 * 60 * 1000);
+
+    const contratos = await this.prisma.contrato.findMany({
+      where: { status: "ATIVO", vigenciaFim: { lte: limite } },
+      include: { participacao: { include: { cliente: true } } },
+    });
+
+    let enviados = 0;
+
+    for (const contrato of contratos) {
+      const { participacao } = contrato;
+      const destinatarioId = participacao.responsavelId ?? participacao.cliente.responsavelId;
+      if (!destinatarioId) continue;
+
+      const jaEnviado = await this.notificacoes.foiEnviadaRecentemente(
+        participacao.id,
+        TIPO_CONTRATO_VENCENDO,
+        20,
+      );
+      if (jaEnviado) continue;
+
+      const vencido = contrato.vigenciaFim < agora;
+      await this.notificacoes.enviar({
+        destinatarioId,
+        tipo: TIPO_CONTRATO_VENCENDO,
+        participacaoId: participacao.id,
+        assunto: vencido
+          ? `[Vencido] Contrato ${contrato.numero} — ${participacao.cliente.razaoSocial}`
+          : `Contrato vencendo: ${contrato.numero} — ${participacao.cliente.razaoSocial}`,
+        corpo: vencido
+          ? `A vigência do contrato ${contrato.numero} de ${participacao.cliente.razaoSocial} encerrou em ${contrato.vigenciaFim.toLocaleDateString("pt-BR")}. Verifique renovação ou encerramento.`
+          : `A vigência do contrato ${contrato.numero} de ${participacao.cliente.razaoSocial} encerra em ${contrato.vigenciaFim.toLocaleDateString("pt-BR")}. Verifique renovação ou encerramento.`,
+      });
+      enviados += 1;
+    }
+
+    return enviados;
   }
 
   /** Controle de validade de documentos — alerta automático antes do vencimento. */

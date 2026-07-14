@@ -29,6 +29,7 @@ import {
 } from "@/lib/api/participacoes";
 import { optionalNumber } from "@/lib/form-utils";
 import { DocumentosSection } from "@/components/documentos/DocumentosSection";
+import { ContratoSection } from "@/components/contratos/ContratoSection";
 
 export function ParticipacaoFichaPage() {
   const { id } = useParams<{ id: string }>();
@@ -145,6 +146,8 @@ export function ParticipacaoFichaPage() {
           onChanged={invalidarTudo}
         />
       )}
+
+      {participacao.status === "CONTRATADA" && <ContratoSection participacaoId={participacao.id} />}
 
       <DocumentosSection participacaoId={participacao.id} />
 

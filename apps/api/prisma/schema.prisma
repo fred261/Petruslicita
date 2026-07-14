@@ -302,6 +302,7 @@ model Participacao {
   eventos     Evento[]
   comentarios Comentario[]
   documentos  Documento[]
+  contrato    Contrato?
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -440,4 +441,56 @@ model Documento {
   @@index([participacaoId])
   @@index([dataValidade])
   @@map("documentos")
+}
+
+enum StatusContrato {
+  ATIVO
+  ENCERRADO
+  RESCINDIDO
+}
+
+enum TipoItemCronograma {
+  ENTREGA
+  FATURAMENTO
+}
+
+/// Pós-resultado — nasce quando a Participação chega a Contratada.
+model Contrato {
+  id             String       @id @default(cuid())
+  participacaoId String       @unique
+  participacao   Participacao @relation(fields: [participacaoId], references: [id], onDelete: Cascade)
+
+  numero         String
+  valorFinal     Decimal        @db.Decimal(16, 2)
+  vigenciaInicio DateTime
+  vigenciaFim    DateTime
+  status         StatusContrato @default(ATIVO)
+  observacoes    String?
+
+  cronograma ItemCronograma[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([vigenciaFim])
+  @@map("contratos")
+}
+
+/// Cronograma de entregas/faturamento do contrato.
+model ItemCronograma {
+  id         String   @id @default(cuid())
+  contratoId String
+  contrato   Contrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+  tipo          TipoItemCronograma
+  descricao     String
+  dataPrevista  DateTime
+  valorPrevisto Decimal?           @db.Decimal(16, 2)
+  concluido     Boolean            @default(false)
+  dataConclusao DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("itens_cronograma")
 }
