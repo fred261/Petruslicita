@@ -15,3 +15,4 @@ export * from "./schemas/prazos";
 export * from "./schemas/documento";
 export * from "./schemas/contrato";
 export * from "./schemas/dashboard";
+export * from "./schemas/concorrente";

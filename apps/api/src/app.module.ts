@@ -17,6 +17,7 @@ import { PrazosModule } from "./prazos/prazos.module";
 import { DocumentosModule } from "./documentos/documentos.module";
 import { ContratosModule } from "./contratos/contratos.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
+import { ConcorrentesModule } from "./concorrentes/concorrentes.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 
@@ -50,6 +51,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     DocumentosModule,
     ContratosModule,
     DashboardModule,
+    ConcorrentesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

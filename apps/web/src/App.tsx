@@ -14,6 +14,8 @@ import { ParticipacaoFichaPage } from "@/pages/ParticipacaoFichaPage";
 import { PendenciasPage } from "@/pages/PendenciasPage";
 import { ConfiguracoesPage } from "@/pages/ConfiguracoesPage";
 import { ModelosDocumentoPage } from "@/pages/ModelosDocumentoPage";
+import { ConcorrentesPage } from "@/pages/ConcorrentesPage";
+import { ConcorrenteFichaPage } from "@/pages/ConcorrenteFichaPage";
 import { USER_MANAGER_ROLES } from "@petrus/shared";
 
 export default function App() {
@@ -106,6 +108,26 @@ export default function App() {
           <ProtectedRoute>
             <AppShell>
               <PendenciasPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/concorrentes"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <ConcorrentesPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/concorrentes/:chave"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <ConcorrenteFichaPage />
             </AppShell>
           </ProtectedRoute>
         }
