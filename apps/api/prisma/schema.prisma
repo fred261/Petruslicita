@@ -91,6 +91,7 @@ model Usuario {
   participacoes       Participacao[]   @relation("ParticipacaoResponsavel")
   eventos             Evento[]
   comentarios         Comentario[]
+  notificacoes        Notificacao[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -355,4 +356,38 @@ model Evento {
   @@index([licitacaoId])
   @@index([participacaoId])
   @@map("eventos")
+}
+
+/// Parâmetros globais do motor de prazos/cobrança (Master). Linha única.
+model ConfiguracaoSistema {
+  id                             String   @id @default("default")
+  diasAntecedenciaPrazo          Int      @default(3)
+  intervaloCobrancaSemPrazoHoras Int      @default(168)
+  toleranciaEscalonamentoHoras   Int      @default(48)
+  atualizadoEm                   DateTime @updatedAt
+
+  @@map("configuracoes_sistema")
+}
+
+enum CanalNotificacao {
+  EMAIL
+}
+
+/// Log de notificações disparadas pelo motor de prazos (cobrança e escalonamento).
+model Notificacao {
+  id             String           @id @default(cuid())
+  destinatarioId String
+  destinatario   Usuario          @relation(fields: [destinatarioId], references: [id], onDelete: Cascade)
+  tipo           String
+  canal          CanalNotificacao @default(EMAIL)
+  assunto        String
+  corpo          String
+  participacaoId String?
+  enviadaEm      DateTime?
+  erro           String?
+  criadoEm       DateTime         @default(now())
+
+  @@index([participacaoId, tipo])
+  @@index([destinatarioId])
+  @@map("notificacoes")
 }

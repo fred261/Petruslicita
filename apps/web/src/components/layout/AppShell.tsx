@@ -1,16 +1,20 @@
 import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { Building2, LayoutDashboard, LogOut, Menu, Radar, Users, X } from "lucide-react";
+import { AlarmClock, Building2, LayoutDashboard, LogOut, Menu, Radar, Settings, Users, X } from "lucide-react";
 import clsx from "clsx";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth-context";
-import { ROLE_LABELS, USER_MANAGER_ROLES } from "@petrus/shared";
+import { ROLE_LABELS, USER_MANAGER_ROLES, type Role } from "@petrus/shared";
+
+const MASTER_ONLY: Role[] = ["MASTER"];
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, roles: undefined },
   { to: "/editais", label: "Radar de Editais", icon: Radar, roles: undefined },
+  { to: "/pendencias", label: "Pendências", icon: AlarmClock, roles: undefined },
   { to: "/clientes", label: "Clientes", icon: Building2, roles: undefined },
   { to: "/usuarios", label: "Usuários", icon: Users, roles: USER_MANAGER_ROLES },
+  { to: "/configuracoes", label: "Configurações", icon: Settings, roles: MASTER_ONLY },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

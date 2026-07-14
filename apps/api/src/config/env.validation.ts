@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  REDIS_URL: z.string().min(1).optional(),
+  REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   JWT_ACCESS_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
@@ -13,6 +13,8 @@ const envSchema = z.object({
   CNPJ_LOOKUP_PRIMARY_URL: z.string().url().default("https://brasilapi.com.br/api/cnpj/v1"),
   CNPJ_LOOKUP_FALLBACK_URL: z.string().url().default("https://publica.cnpj.ws/cnpj"),
   PNCP_BASE_URL: z.string().url().default("https://pncp.gov.br/api/consulta"),
+  EMAIL_FROM: z.string().default("nao-responda@petruslicitacao.com.br"),
+  RESEND_API_KEY: z.string().optional(),
   API_PORT: z.coerce.number().int().positive().default(3333),
   WEB_URL: z.string().default("http://localhost:5173"),
 });

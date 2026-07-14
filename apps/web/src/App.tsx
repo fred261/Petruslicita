@@ -11,6 +11,8 @@ import { RadarEditaisPage } from "@/pages/RadarEditaisPage";
 import { EditalNovoPage } from "@/pages/EditalNovoPage";
 import { EditalFichaPage } from "@/pages/EditalFichaPage";
 import { ParticipacaoFichaPage } from "@/pages/ParticipacaoFichaPage";
+import { PendenciasPage } from "@/pages/PendenciasPage";
+import { ConfiguracoesPage } from "@/pages/ConfiguracoesPage";
 import { USER_MANAGER_ROLES } from "@petrus/shared";
 
 export default function App() {
@@ -98,11 +100,31 @@ export default function App() {
         }
       />
       <Route
+        path="/pendencias"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <PendenciasPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/usuarios"
         element={
           <ProtectedRoute allow={USER_MANAGER_ROLES}>
             <AppShell>
               <UsuariosPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracoes"
+        element={
+          <ProtectedRoute allow={["MASTER"]}>
+            <AppShell>
+              <ConfiguracoesPage />
             </AppShell>
           </ProtectedRoute>
         }
