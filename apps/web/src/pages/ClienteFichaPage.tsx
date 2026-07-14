@@ -21,6 +21,7 @@ import { listarParticipacoesPorCliente } from "@/lib/api/participacoes";
 import { listarUsuarios } from "@/lib/api/usuarios";
 import { useAuth } from "@/lib/auth-context";
 import { numberWithDefault, optionalNumber } from "@/lib/form-utils";
+import { DocumentosSection } from "@/components/documentos/DocumentosSection";
 
 export function ClienteFichaPage() {
   const { id } = useParams<{ id: string }>();
@@ -292,6 +293,8 @@ export function ClienteFichaPage() {
           </form>
         </CardContent>
       </Card>
+
+      <DocumentosSection clienteId={cliente.id} />
     </div>
   );
 }

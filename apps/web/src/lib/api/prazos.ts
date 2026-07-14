@@ -6,10 +6,12 @@ export function listarPendencias() {
 }
 
 export function executarVerificacaoAgora() {
-  return apiFetch<{ participacoesAvaliadas: number; cobrancasEnviadas: number; escalonamentosEnviados: number }>(
-    "/prazos/executar-agora",
-    { method: "POST" },
-  );
+  return apiFetch<{
+    participacoesAvaliadas: number;
+    cobrancasEnviadas: number;
+    escalonamentosEnviados: number;
+    alertasDocumentosEnviados: number;
+  }>("/prazos/executar-agora", { method: "POST" });
 }
 
 export function obterConfiguracaoSistema() {

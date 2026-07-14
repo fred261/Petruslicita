@@ -94,3 +94,55 @@ export async function apiFetch<T>(
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
+
+/** Como apiFetch, mas para multipart/form-data (upload) — sem Content-Type fixo. */
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const tokens = getStoredTokens();
+  const doFetch = async (accessToken?: string) =>
+    fetch(`/api${path}`, {
+      method: "POST",
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: formData,
+    });
+
+  let response = await doFetch(tokens?.accessToken);
+
+  if (response.status === 401 && tokens?.refreshToken) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      response = await doFetch(newAccessToken);
+    }
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(body.message ?? "Erro inesperado.", response.status, body.issues);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+/** Baixa um arquivo autenticado e devolve um Blob pronto para salvar no navegador. */
+export async function apiDownloadBlob(path: string): Promise<Blob> {
+  const tokens = getStoredTokens();
+  const doFetch = async (accessToken?: string) =>
+    fetch(`/api${path}`, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    });
+
+  let response = await doFetch(tokens?.accessToken);
+
+  if (response.status === 401 && tokens?.refreshToken) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      response = await doFetch(newAccessToken);
+    }
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(body.message ?? "Erro ao baixar arquivo.", response.status, body.issues);
+  }
+
+  return response.blob();
+}

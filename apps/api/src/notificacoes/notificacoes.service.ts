@@ -9,6 +9,7 @@ interface EnviarParams {
   assunto: string;
   corpo: string;
   participacaoId?: string;
+  documentoId?: string;
 }
 
 /** Todo envio é registrado em Notificacao, com ou sem sucesso — nunca falha silenciosamente. */
@@ -32,6 +33,7 @@ export class NotificacoesService {
         assunto: params.assunto,
         corpo: params.corpo,
         participacaoId: params.participacaoId,
+        documentoId: params.documentoId,
       },
     });
 
@@ -59,6 +61,15 @@ export class NotificacoesService {
     const desde = new Date(Date.now() - horas * 60 * 60 * 1000);
     const existente = await this.prisma.notificacao.findFirst({
       where: { participacaoId, tipo, criadoEm: { gte: desde } },
+    });
+    return !!existente;
+  }
+
+  /** Mesma checagem de dedup, para notificações referenciando um Documento. */
+  async foiEnviadaRecentementeParaDocumento(documentoId: string, tipo: string, horas: number): Promise<boolean> {
+    const desde = new Date(Date.now() - horas * 60 * 60 * 1000);
+    const existente = await this.prisma.notificacao.findFirst({
+      where: { documentoId, tipo, criadoEm: { gte: desde } },
     });
     return !!existente;
   }

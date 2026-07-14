@@ -53,7 +53,8 @@ export function PendenciasPage() {
       {executarMutation.data && (
         <p className="text-sm text-emerald-700">
           {executarMutation.data.participacoesAvaliadas} participações avaliadas — {executarMutation.data.cobrancasEnviadas}{" "}
-          cobrança(s) e {executarMutation.data.escalonamentosEnviados} escalonamento(s) enviados.
+          cobrança(s), {executarMutation.data.escalonamentosEnviados} escalonamento(s) e{" "}
+          {executarMutation.data.alertasDocumentosEnviados} alerta(s) de documento enviados.
         </p>
       )}
       {executarMutation.error && (

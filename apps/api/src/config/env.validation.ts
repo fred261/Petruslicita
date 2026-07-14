@@ -15,6 +15,13 @@ const envSchema = z.object({
   PNCP_BASE_URL: z.string().url().default("https://pncp.gov.br/api/consulta"),
   EMAIL_FROM: z.string().default("nao-responda@petruslicitacao.com.br"),
   RESEND_API_KEY: z.string().optional(),
+  STORAGE_LOCAL_DIR: z.string().default("./storage/documentos"),
+  S3_BUCKET: z.string().optional(),
+  S3_REGION: z.string().default("us-east-1"),
+  S3_ENDPOINT: z.string().optional(),
+  S3_ACCESS_KEY: z.string().optional(),
+  S3_SECRET_KEY: z.string().optional(),
+  S3_FORCE_PATH_STYLE: z.string().optional(),
   API_PORT: z.coerce.number().int().positive().default(3333),
   WEB_URL: z.string().default("http://localhost:5173"),
 });

@@ -14,6 +14,7 @@ import { ClientesModule } from "./clientes/clientes.module";
 import { LicitacoesModule } from "./licitacoes/licitacoes.module";
 import { ParticipacoesModule } from "./participacoes/participacoes.module";
 import { PrazosModule } from "./prazos/prazos.module";
+import { DocumentosModule } from "./documentos/documentos.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 
@@ -44,6 +45,7 @@ import { RolesGuard } from "./common/guards/roles.guard";
     LicitacoesModule,
     ParticipacoesModule,
     PrazosModule,
+    DocumentosModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

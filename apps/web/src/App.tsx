@@ -13,6 +13,7 @@ import { EditalFichaPage } from "@/pages/EditalFichaPage";
 import { ParticipacaoFichaPage } from "@/pages/ParticipacaoFichaPage";
 import { PendenciasPage } from "@/pages/PendenciasPage";
 import { ConfiguracoesPage } from "@/pages/ConfiguracoesPage";
+import { ModelosDocumentoPage } from "@/pages/ModelosDocumentoPage";
 import { USER_MANAGER_ROLES } from "@petrus/shared";
 
 export default function App() {
@@ -125,6 +126,16 @@ export default function App() {
           <ProtectedRoute allow={["MASTER"]}>
             <AppShell>
               <ConfiguracoesPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/modelos-documento"
+        element={
+          <ProtectedRoute allow={USER_MANAGER_ROLES}>
+            <AppShell>
+              <ModelosDocumentoPage />
             </AppShell>
           </ProtectedRoute>
         }

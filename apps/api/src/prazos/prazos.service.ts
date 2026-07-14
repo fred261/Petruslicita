@@ -13,11 +13,13 @@ interface ResumoExecucao {
   participacoesAvaliadas: number;
   cobrancasEnviadas: number;
   escalonamentosEnviados: number;
+  alertasDocumentosEnviados: number;
 }
 
 const TIPO_COBRANCA_PRAZO = "COBRANCA_PRAZO";
 const TIPO_COBRANCA_SEM_PRAZO = "COBRANCA_SEM_PRAZO";
 const TIPO_ESCALONAMENTO = "ESCALONAMENTO";
+const TIPO_DOCUMENTO_VENCENDO = "DOCUMENTO_VENCENDO";
 
 @Injectable()
 export class PrazosService {
@@ -93,12 +95,64 @@ export class PrazosService {
     }
 
     const escalonamentosEnviados = await this.executarEscalonamento(config.toleranciaEscalonamentoHoras);
+    const alertasDocumentosEnviados = await this.verificarDocumentosVencendo(config.diasAntecedenciaPrazo);
 
     this.logger.log(
-      `Verificação de prazos concluída: ${participacoes.length} participações avaliadas, ${cobrancasEnviadas} cobrança(s), ${escalonamentosEnviados} escalonamento(s).`,
+      `Verificação de prazos concluída: ${participacoes.length} participações avaliadas, ${cobrancasEnviadas} cobrança(s), ${escalonamentosEnviados} escalonamento(s), ${alertasDocumentosEnviados} alerta(s) de documento.`,
     );
 
-    return { participacoesAvaliadas: participacoes.length, cobrancasEnviadas, escalonamentosEnviados };
+    return {
+      participacoesAvaliadas: participacoes.length,
+      cobrancasEnviadas,
+      escalonamentosEnviados,
+      alertasDocumentosEnviados,
+    };
+  }
+
+  /** Controle de validade de documentos — alerta automático antes do vencimento. */
+  private async verificarDocumentosVencendo(diasAntecedencia: number): Promise<number> {
+    const agora = new Date();
+    const limite = new Date(agora.getTime() + diasAntecedencia * 24 * 60 * 60 * 1000);
+
+    const documentos = await this.prisma.documento.findMany({
+      where: { dataValidade: { not: null, lte: limite } },
+      include: {
+        cliente: true,
+        participacao: { include: { cliente: true } },
+      },
+    });
+
+    let enviados = 0;
+
+    for (const documento of documentos) {
+      const cliente = documento.cliente ?? documento.participacao?.cliente;
+      if (!cliente) continue;
+      const destinatarioId = documento.participacao?.responsavelId ?? cliente.responsavelId;
+      if (!destinatarioId) continue;
+
+      const jaEnviado = await this.notificacoes.foiEnviadaRecentementeParaDocumento(
+        documento.id,
+        TIPO_DOCUMENTO_VENCENDO,
+        20,
+      );
+      if (jaEnviado) continue;
+
+      const vencido = documento.dataValidade! < agora;
+      await this.notificacoes.enviar({
+        destinatarioId,
+        tipo: TIPO_DOCUMENTO_VENCENDO,
+        documentoId: documento.id,
+        assunto: vencido
+          ? `[Vencido] ${documento.tipo} — ${cliente.razaoSocial}`
+          : `Documento vencendo: ${documento.tipo} — ${cliente.razaoSocial}`,
+        corpo: vencido
+          ? `O documento "${documento.tipo}" (${documento.nomeArquivo}) de ${cliente.razaoSocial} venceu em ${documento.dataValidade!.toLocaleDateString("pt-BR")}. Providencie a renovação.`
+          : `O documento "${documento.tipo}" (${documento.nomeArquivo}) de ${cliente.razaoSocial} vence em ${documento.dataValidade!.toLocaleDateString("pt-BR")}. Providencie a renovação.`,
+      });
+      enviados += 1;
+    }
+
+    return enviados;
   }
 
   private async executarEscalonamento(toleranciaHoras: number): Promise<number> {

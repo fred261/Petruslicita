@@ -28,6 +28,7 @@ import {
   selecionarItensParticipacao,
 } from "@/lib/api/participacoes";
 import { optionalNumber } from "@/lib/form-utils";
+import { DocumentosSection } from "@/components/documentos/DocumentosSection";
 
 export function ParticipacaoFichaPage() {
   const { id } = useParams<{ id: string }>();
@@ -144,6 +145,8 @@ export function ParticipacaoFichaPage() {
           onChanged={invalidarTudo}
         />
       )}
+
+      <DocumentosSection participacaoId={participacao.id} />
 
       <ComentariosCard participacaoId={participacao.id} />
 
