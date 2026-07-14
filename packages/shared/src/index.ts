@@ -16,3 +16,4 @@ export * from "./schemas/documento";
 export * from "./schemas/contrato";
 export * from "./schemas/dashboard";
 export * from "./schemas/concorrente";
+export * from "./schemas/auditoria";

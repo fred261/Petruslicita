@@ -30,12 +30,14 @@ export class ConfiguracaoService {
     diasAntecedenciaPrazo: number;
     intervaloCobrancaSemPrazoHoras: number;
     toleranciaEscalonamentoHoras: number;
+    retencaoAuditoriaDias: number;
     atualizadoEm: Date;
   }): ConfiguracaoSistemaResponse {
     return {
       diasAntecedenciaPrazo: config.diasAntecedenciaPrazo,
       intervaloCobrancaSemPrazoHoras: config.intervaloCobrancaSemPrazoHoras,
       toleranciaEscalonamentoHoras: config.toleranciaEscalonamentoHoras,
+      retencaoAuditoriaDias: config.retencaoAuditoriaDias,
       atualizadoEm: config.atualizadoEm.toISOString(),
     };
   }

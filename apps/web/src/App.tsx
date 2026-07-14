@@ -16,6 +16,7 @@ import { ConfiguracoesPage } from "@/pages/ConfiguracoesPage";
 import { ModelosDocumentoPage } from "@/pages/ModelosDocumentoPage";
 import { ConcorrentesPage } from "@/pages/ConcorrentesPage";
 import { ConcorrenteFichaPage } from "@/pages/ConcorrenteFichaPage";
+import { AuditoriaPage } from "@/pages/AuditoriaPage";
 import { USER_MANAGER_ROLES } from "@petrus/shared";
 
 export default function App() {
@@ -148,6 +149,16 @@ export default function App() {
           <ProtectedRoute allow={["MASTER"]}>
             <AppShell>
               <ConfiguracoesPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/auditoria"
+        element={
+          <ProtectedRoute allow={["MASTER"]}>
+            <AppShell>
+              <AuditoriaPage />
             </AppShell>
           </ProtectedRoute>
         }

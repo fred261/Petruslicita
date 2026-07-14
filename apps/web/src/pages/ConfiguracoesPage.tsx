@@ -21,6 +21,7 @@ export function ConfiguracoesPage() {
         diasAntecedenciaPrazo: configQuery.data.diasAntecedenciaPrazo,
         intervaloCobrancaSemPrazoHoras: configQuery.data.intervaloCobrancaSemPrazoHoras,
         toleranciaEscalonamentoHoras: configQuery.data.toleranciaEscalonamentoHoras,
+        retencaoAuditoriaDias: configQuery.data.retencaoAuditoriaDias,
       });
     }
   }, [configQuery.data]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -74,6 +75,20 @@ export function ConfiguracoesPage() {
                 max={240}
                 {...form.register("toleranciaEscalonamentoHoras", { valueAsNumber: true })}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="retencaoAuditoriaDias">Retenção de logs de auditoria e acesso (dias, LGPD)</Label>
+              <Input
+                id="retencaoAuditoriaDias"
+                type="number"
+                min={30}
+                max={3650}
+                {...form.register("retencaoAuditoriaDias", { valueAsNumber: true })}
+              />
+              <p className="mt-1 text-xs text-ink-500">
+                Logs mais antigos que este período podem ser purgados na tela de Auditoria.
+              </p>
             </div>
 
             {salvarMutation.error && (

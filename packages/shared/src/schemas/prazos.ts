@@ -20,6 +20,7 @@ export const configuracaoSistemaSchema = z.object({
   diasAntecedenciaPrazo: z.number().int().min(0).max(30),
   intervaloCobrancaSemPrazoHoras: z.number().int().min(1).max(720),
   toleranciaEscalonamentoHoras: z.number().int().min(1).max(240),
+  retencaoAuditoriaDias: z.number().int().min(30).max(3650),
 });
 export type ConfiguracaoSistemaInput = z.infer<typeof configuracaoSistemaSchema>;
 

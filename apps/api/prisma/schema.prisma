@@ -368,6 +368,8 @@ model ConfiguracaoSistema {
   diasAntecedenciaPrazo          Int      @default(3)
   intervaloCobrancaSemPrazoHoras Int      @default(168)
   toleranciaEscalonamentoHoras   Int      @default(48)
+  /// LGPD: dias de retenção de logs de auditoria/acesso antes de poderem ser purgados.
+  retencaoAuditoriaDias          Int      @default(365)
   atualizadoEm                   DateTime @updatedAt
 
   @@map("configuracoes_sistema")

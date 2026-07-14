@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   Radar,
+  ScrollText,
   Settings,
   Swords,
   Users,
@@ -28,6 +29,7 @@ const navItems = [
   { to: "/concorrentes", label: "Concorrentes", icon: Swords, roles: undefined },
   { to: "/usuarios", label: "Usuários", icon: Users, roles: USER_MANAGER_ROLES },
   { to: "/modelos-documento", label: "Modelos de Documento", icon: FileStack, roles: USER_MANAGER_ROLES },
+  { to: "/auditoria", label: "Auditoria", icon: ScrollText, roles: MASTER_ONLY },
   { to: "/configuracoes", label: "Configurações", icon: Settings, roles: MASTER_ONLY },
 ];
 
