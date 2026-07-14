@@ -48,7 +48,8 @@ export class ParticipacoesController {
   }
 
   @Get(":id/eventos")
-  eventos(@Param("id") id: string) {
+  async eventos(@Param("id") id: string, @CurrentUser() autor: AuthenticatedUser) {
+    await this.participacoesService.buscarPorId(id, autor);
     return this.eventosService.listarPorParticipacao(id);
   }
 

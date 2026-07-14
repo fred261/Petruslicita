@@ -54,8 +54,8 @@ export class LicitacoesController {
   }
 
   @Get(":id/eventos")
-  eventos(@Param("id") id: string) {
-    return this.eventosService.listarPorLicitacao(id);
+  eventos(@Param("id") id: string, @CurrentUser() autor: AuthenticatedUser) {
+    return this.eventosService.listarPorLicitacao(id, autor);
   }
 
   @Post(":id/atualizar-itens")
