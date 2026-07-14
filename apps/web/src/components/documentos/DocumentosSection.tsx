@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Trash2 } from "lucide-react";
 import { STATUS_DOCUMENTO_LABELS } from "@petrus/shared";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -76,11 +76,7 @@ export function DocumentosSection({ clienteId, participacaoId }: DocumentosSecti
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Documentos</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <CollapsibleSection title="Documentos" contentClassName="space-y-4">
         <form
           className="grid gap-3 sm:grid-cols-2"
           onSubmit={(e) => {
@@ -175,7 +171,6 @@ export function DocumentosSection({ clienteId, participacaoId }: DocumentosSecti
             ))
           )}
         </div>
-      </CardContent>
-    </Card>
+    </CollapsibleSection>
   );
 }

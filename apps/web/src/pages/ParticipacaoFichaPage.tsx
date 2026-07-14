@@ -11,7 +11,8 @@ import {
   type StatusParticipacao,
 } from "@petrus/shared";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
@@ -96,37 +97,36 @@ export function ParticipacaoFichaPage() {
       </Card>
 
       {participacao.motivoPerdaCategoria && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Motivo de perda</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
-            <Campo label="Categoria" valor={MOTIVO_PERDA_CATEGORIA_LABELS[participacao.motivoPerdaCategoria]} />
-            <Campo label="Concorrente vencedor" valor={participacao.concorrenteVencedorNome ?? "—"} />
-            <Campo
-              label="Valor da proposta vencedora"
-              valor={
-                participacao.valorPropostaVencedora !== null
-                  ? participacao.valorPropostaVencedora.toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })
-                  : "—"
-              }
-            />
-            <Campo
-              label="Diferença percentual"
-              valor={
-                participacao.diferencaPercentualVencedora !== null
-                  ? `${participacao.diferencaPercentualVencedora > 0 ? "+" : ""}${participacao.diferencaPercentualVencedora}%`
-                  : "—"
-              }
-            />
-            {participacao.motivoPerdaTexto && (
-              <Campo label="Observações" valor={participacao.motivoPerdaTexto} className="sm:col-span-2" />
-            )}
-          </CardContent>
-        </Card>
+        <CollapsibleSection
+          title="Motivo de perda"
+          defaultOpen
+          contentClassName="grid gap-2 text-sm sm:grid-cols-2"
+        >
+          <Campo label="Categoria" valor={MOTIVO_PERDA_CATEGORIA_LABELS[participacao.motivoPerdaCategoria]} />
+          <Campo label="Concorrente vencedor" valor={participacao.concorrenteVencedorNome ?? "—"} />
+          <Campo
+            label="Valor da proposta vencedora"
+            valor={
+              participacao.valorPropostaVencedora !== null
+                ? participacao.valorPropostaVencedora.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })
+                : "—"
+            }
+          />
+          <Campo
+            label="Diferença percentual"
+            valor={
+              participacao.diferencaPercentualVencedora !== null
+                ? `${participacao.diferencaPercentualVencedora > 0 ? "+" : ""}${participacao.diferencaPercentualVencedora}%`
+                : "—"
+            }
+          />
+          {participacao.motivoPerdaTexto && (
+            <Campo label="Observações" valor={participacao.motivoPerdaTexto} className="sm:col-span-2" />
+          )}
+        </CollapsibleSection>
       )}
 
       <div className="grid gap-6 sm:grid-cols-2">
@@ -153,23 +153,18 @@ export function ParticipacaoFichaPage() {
 
       <ComentariosCard participacaoId={participacao.id} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Timeline</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {(eventosQuery.data ?? []).length === 0 && <p className="text-sm text-ink-500">Sem eventos ainda.</p>}
-          {(eventosQuery.data ?? []).map((evento) => (
-            <div key={evento.id} className="border-l-2 border-gold-200 pl-3 text-sm">
-              <p className="text-ink-900">{evento.descricao}</p>
-              <p className="text-xs text-ink-500">
-                {new Date(evento.criadoEm).toLocaleString("pt-BR")}
-                {evento.autorNome ? ` · ${evento.autorNome}` : " · sistema"}
-              </p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <CollapsibleSection title="Timeline" contentClassName="space-y-3">
+        {(eventosQuery.data ?? []).length === 0 && <p className="text-sm text-ink-500">Sem eventos ainda.</p>}
+        {(eventosQuery.data ?? []).map((evento) => (
+          <div key={evento.id} className="border-l-2 border-gold-200 pl-3 text-sm">
+            <p className="text-ink-900">{evento.descricao}</p>
+            <p className="text-xs text-ink-500">
+              {new Date(evento.criadoEm).toLocaleString("pt-BR")}
+              {evento.autorNome ? ` · ${evento.autorNome}` : " · sistema"}
+            </p>
+          </div>
+        ))}
+      </CollapsibleSection>
     </div>
   );
 }
@@ -373,18 +368,13 @@ function PrazoCard({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Próximo prazo</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <p className="text-xs text-ink-500">Dispara a cobrança automática de atualização nesta data.</p>
-        <Input type="date" value={valor} onChange={(e) => setValor(e.target.value)} />
-        <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-          {mutation.isPending ? "Salvando…" : "Salvar prazo"}
-        </Button>
-      </CardContent>
-    </Card>
+    <CollapsibleSection title="Próximo prazo" contentClassName="space-y-2">
+      <p className="text-xs text-ink-500">Dispara a cobrança automática de atualização nesta data.</p>
+      <Input type="date" value={valor} onChange={(e) => setValor(e.target.value)} />
+      <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+        {mutation.isPending ? "Salvando…" : "Salvar prazo"}
+      </Button>
+    </CollapsibleSection>
   );
 }
 
@@ -407,17 +397,12 @@ function ValorPropostoCard({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Valor proposto</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} />
-        <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-          {mutation.isPending ? "Salvando…" : "Salvar valor"}
-        </Button>
-      </CardContent>
-    </Card>
+    <CollapsibleSection title="Valor proposto" contentClassName="space-y-2">
+      <Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} />
+      <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+        {mutation.isPending ? "Salvando…" : "Salvar valor"}
+      </Button>
+    </CollapsibleSection>
   );
 }
 
@@ -450,24 +435,19 @@ function ItensDisputadosCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Itens/lotes disputados</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="max-h-52 space-y-1 overflow-y-auto">
-          {itens.map((item) => (
-            <label key={item.id} className="flex items-center gap-2 text-sm text-ink-700">
-              <input type="checkbox" checked={selecionados.has(item.id)} onChange={() => toggle(item.id)} />
-              #{item.numero} — {item.descricao}
-            </label>
-          ))}
-        </div>
-        <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-          {mutation.isPending ? "Salvando…" : "Salvar seleção"}
-        </Button>
-      </CardContent>
-    </Card>
+    <CollapsibleSection title="Itens/lotes disputados" contentClassName="space-y-3">
+      <div className="max-h-52 space-y-1 overflow-y-auto">
+        {itens.map((item) => (
+          <label key={item.id} className="flex items-center gap-2 text-sm text-ink-700">
+            <input type="checkbox" checked={selecionados.has(item.id)} onChange={() => toggle(item.id)} />
+            #{item.numero} — {item.descricao}
+          </label>
+        ))}
+      </div>
+      <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+        {mutation.isPending ? "Salvando…" : "Salvar seleção"}
+      </Button>
+    </CollapsibleSection>
   );
 }
 
@@ -489,37 +469,32 @@ function ComentariosCard({ participacaoId }: { participacaoId: string }) {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Anotações internas</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-xs text-ink-500">Visível apenas para a equipe do escritório.</p>
-        <div className="space-y-2">
-          <textarea
-            className="min-h-16 w-full rounded-md border border-ink-100 bg-white px-3 py-2 text-sm"
-            placeholder="Escreva uma anotação…"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-          />
-          <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending || !texto.trim()}>
-            {mutation.isPending ? "Enviando…" : "Adicionar anotação"}
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {(comentariosQuery.data ?? []).map((c) => (
-            <div key={c.id} className="border-t border-ink-100 pt-2 text-sm">
-              <p className="text-ink-900">{c.texto}</p>
-              <p className="text-xs text-ink-500">
-                {c.autorNome ?? "—"} · {new Date(c.criadoEm).toLocaleString("pt-BR")}
-              </p>
-            </div>
-          ))}
-          {(comentariosQuery.data ?? []).length === 0 && (
-            <p className="text-sm text-ink-500">Nenhuma anotação ainda.</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <CollapsibleSection title="Anotações internas" contentClassName="space-y-3">
+      <p className="text-xs text-ink-500">Visível apenas para a equipe do escritório.</p>
+      <div className="space-y-2">
+        <textarea
+          className="min-h-16 w-full rounded-md border border-ink-100 bg-white px-3 py-2 text-sm"
+          placeholder="Escreva uma anotação…"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+        <Button size="sm" onClick={() => mutation.mutate()} disabled={mutation.isPending || !texto.trim()}>
+          {mutation.isPending ? "Enviando…" : "Adicionar anotação"}
+        </Button>
+      </div>
+      <div className="space-y-3">
+        {(comentariosQuery.data ?? []).map((c) => (
+          <div key={c.id} className="border-t border-ink-100 pt-2 text-sm">
+            <p className="text-ink-900">{c.texto}</p>
+            <p className="text-xs text-ink-500">
+              {c.autorNome ?? "—"} · {new Date(c.criadoEm).toLocaleString("pt-BR")}
+            </p>
+          </div>
+        ))}
+        {(comentariosQuery.data ?? []).length === 0 && (
+          <p className="text-sm text-ink-500">Nenhuma anotação ainda.</p>
+        )}
+      </div>
+    </CollapsibleSection>
   );
 }

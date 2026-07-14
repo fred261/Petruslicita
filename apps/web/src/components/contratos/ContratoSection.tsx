@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TIPO_ITEM_CRONOGRAMA, TIPO_ITEM_CRONOGRAMA_LABELS, STATUS_CONTRATO_LABELS, type TipoItemCronograma } from "@petrus/shared";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -21,18 +21,13 @@ export function ContratoSection({ participacaoId }: { participacaoId: string }) 
   if (contratoQuery.isLoading) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Contrato</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {contratoQuery.data ? (
-          <ContratoDetalhe contrato={contratoQuery.data} queryKey={queryKey} />
-        ) : (
-          <RegistrarContratoForm participacaoId={participacaoId} queryKey={queryKey} />
-        )}
-      </CardContent>
-    </Card>
+    <CollapsibleSection title="Contrato" defaultOpen>
+      {contratoQuery.data ? (
+        <ContratoDetalhe contrato={contratoQuery.data} queryKey={queryKey} />
+      ) : (
+        <RegistrarContratoForm participacaoId={participacaoId} queryKey={queryKey} />
+      )}
+    </CollapsibleSection>
   );
 }
 
