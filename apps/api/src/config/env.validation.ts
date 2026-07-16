@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  REDIS_URL: z.string().min(1).optional(),
+  REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   JWT_ACCESS_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
@@ -12,11 +12,24 @@ const envSchema = z.object({
   LOGIN_LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
   CNPJ_LOOKUP_PRIMARY_URL: z.string().url().default("https://brasilapi.com.br/api/cnpj/v1"),
   CNPJ_LOOKUP_FALLBACK_URL: z.string().url().default("https://publica.cnpj.ws/cnpj"),
-  API_PORT: z.coerce.number().int().positive().default(3333),
+  PNCP_BASE_URL: z.string().url().default("https://pncp.gov.br/api/consulta"),
+  EMAIL_FROM: z.string().default("nao-responda@petruslicitacao.com.br"),
+  RESEND_API_KEY: z.string().optional(),
+  STORAGE_LOCAL_DIR: z.string().default("./storage/documentos"),
+  S3_BUCKET: z.string().optional(),
+  S3_REGION: z.string().default("us-east-1"),
+  S3_ENDPOINT: z.string().optional(),
+  S3_ACCESS_KEY: z.string().optional(),
+  S3_SECRET_KEY: z.string().optional(),
+  S3_FORCE_PATH_STYLE: z.string().optional(),
+  // Plataformas como o Render definem PORT automaticamente e exigem que o app escute nela;
+  // API_PORT continua disponível para configurar manualmente em outros ambientes.
+  API_PORT: z.coerce.number().int().positive().optional(),
+  PORT: z.coerce.number().int().positive().optional(),
   WEB_URL: z.string().default("http://localhost:5173"),
 });
 
-export type EnvConfig = z.infer<typeof envSchema>;
+export type EnvConfig = Omit<z.infer<typeof envSchema>, "API_PORT"> & { API_PORT: number };
 
 export function validateEnv(config: Record<string, unknown>): EnvConfig {
   const parsed = envSchema.safeParse(config);
@@ -27,5 +40,5 @@ export function validateEnv(config: Record<string, unknown>): EnvConfig {
         .join("\n")}`,
     );
   }
-  return parsed.data;
+  return { ...parsed.data, API_PORT: parsed.data.API_PORT ?? parsed.data.PORT ?? 3333 };
 }

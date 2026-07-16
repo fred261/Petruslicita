@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-esm/
 build/
 coverage/
 .env
@@ -9,5 +10,7 @@ coverage/
 .turbo/
 .pnpm-store/
 apps/api/generated/
+apps/api/storage/
 apps/web/dist/
 *.tsbuildinfo
+*.rdb

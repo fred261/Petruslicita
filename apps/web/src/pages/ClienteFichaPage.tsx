@@ -2,8 +2,9 @@ import { useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
+import { STATUS_PARTICIPACAO_LABELS } from "@petrus/shared";
 import {
   atualizarClienteCamadaEditavelSchema,
   UFS,
@@ -16,9 +17,11 @@ import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
 import { ApiError } from "@/lib/api-client";
 import { atualizarCamadaEditavelCliente, atualizarDadosApiCliente, buscarCliente } from "@/lib/api/clientes";
+import { listarParticipacoesPorCliente } from "@/lib/api/participacoes";
 import { listarUsuarios } from "@/lib/api/usuarios";
 import { useAuth } from "@/lib/auth-context";
 import { numberWithDefault, optionalNumber } from "@/lib/form-utils";
+import { DocumentosSection } from "@/components/documentos/DocumentosSection";
 
 export function ClienteFichaPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +32,12 @@ export function ClienteFichaPage() {
   const clienteQuery = useQuery({
     queryKey: ["clientes", id],
     queryFn: () => buscarCliente(id!),
+    enabled: !!id,
+  });
+
+  const participacoesQuery = useQuery({
+    queryKey: ["participacoes", "por-cliente", id],
+    queryFn: () => listarParticipacoesPorCliente(id!),
     enabled: !!id,
   });
 
@@ -82,6 +91,28 @@ export function ClienteFichaPage() {
           {cliente.status === "ATIVO" ? "Ativo" : "Inativo"}
         </Badge>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Participações</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {(participacoesQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-ink-500">Nenhuma participação ainda.</p>
+          ) : (
+            participacoesQuery.data!.map((p) => (
+              <Link
+                key={p.id}
+                to={`/participacoes/${p.id}`}
+                className="flex items-center justify-between gap-2 text-sm hover:underline"
+              >
+                <span className="min-w-0 flex-1 truncate text-ink-900">{p.licitacaoOrgaoNome}</span>
+                <Badge tone="gold">{STATUS_PARTICIPACAO_LABELS[p.status]}</Badge>
+              </Link>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -262,6 +293,8 @@ export function ClienteFichaPage() {
           </form>
         </CardContent>
       </Card>
+
+      <DocumentosSection clienteId={cliente.id} />
     </div>
   );
 }

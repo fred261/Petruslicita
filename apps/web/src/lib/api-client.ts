@@ -1,5 +1,13 @@
 const STORAGE_KEY = "petrus_auth_tokens";
 
+/**
+ * Base da API. Em dev, o proxy do Vite cobre "/api" no mesmo host. Em produção,
+ * quando web e API são hospedados como serviços separados (ex.: Render), defina
+ * VITE_API_URL (embutida no build) com a URL pública da API — ex.:
+ * "https://petrus-api.onrender.com/api".
+ */
+const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+
 interface StoredTokens {
   accessToken: string;
   refreshToken: string;
@@ -40,7 +48,7 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!tokens) return null;
 
   if (!refreshPromise) {
-    refreshPromise = fetch("/api/auth/refresh", {
+    refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken: tokens.refreshToken }),
@@ -67,7 +75,7 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const tokens = getStoredTokens();
   const doFetch = async (accessToken?: string) => {
-    return fetch(`/api${path}`, {
+    return fetch(`${API_BASE}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -93,4 +101,56 @@ export async function apiFetch<T>(
 
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
+}
+
+/** Como apiFetch, mas para multipart/form-data (upload) — sem Content-Type fixo. */
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const tokens = getStoredTokens();
+  const doFetch = async (accessToken?: string) =>
+    fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: formData,
+    });
+
+  let response = await doFetch(tokens?.accessToken);
+
+  if (response.status === 401 && tokens?.refreshToken) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      response = await doFetch(newAccessToken);
+    }
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(body.message ?? "Erro inesperado.", response.status, body.issues);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+/** Baixa um arquivo autenticado e devolve um Blob pronto para salvar no navegador. */
+export async function apiDownloadBlob(path: string): Promise<Blob> {
+  const tokens = getStoredTokens();
+  const doFetch = async (accessToken?: string) =>
+    fetch(`${API_BASE}${path}`, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    });
+
+  let response = await doFetch(tokens?.accessToken);
+
+  if (response.status === 401 && tokens?.refreshToken) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      response = await doFetch(newAccessToken);
+    }
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(body.message ?? "Erro ao baixar arquivo.", response.status, body.issues);
+  }
+
+  return response.blob();
 }
