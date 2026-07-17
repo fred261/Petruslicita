@@ -20,16 +20,26 @@ Render, fora do blueprint:
 2. Escolha um plano pago (não o Free de 25 MB — ver recomendação no final).
 3. Depois de criado, copie a **Internal Connection String**.
 
-## 3. Armazenamento de documentos (S3-compatível)
+## 3. Armazenamento de documentos (Cloudflare R2)
 
 O disco do Render **não é persistente** — qualquer redeploy apaga arquivos
-enviados localmente. É obrigatório configurar um bucket S3-compatível antes
-de liberar o upload de documentos para uso real:
+enviados localmente. Decisão: **Cloudflare R2** (S3-compatível, sem custo de
+saída de dados).
 
-1. Crie um bucket (Cloudflare R2, AWS S3, ou outro compatível).
-2. Gere uma chave de acesso com permissão de leitura/escrita nesse bucket.
-3. Guarde: endpoint (se não for AWS S3), região, nome do bucket, access key,
-   secret key.
+1. No painel da Cloudflare: **R2 Object Storage > Create bucket**. Nome
+   sugerido: `brpetrus-documentos`.
+2. Em **R2 > Manage API tokens > Create API token**, permissão
+   *Object Read & Write*, restrita a esse bucket.
+3. Anote os quatro valores que a Cloudflare mostra na criação do token:
+   - **Access Key ID** → `S3_ACCESS_KEY`
+   - **Secret Access Key** → `S3_SECRET_KEY`
+   - **Endpoint** (formato `https://<account_id>.r2.cloudflarestorage.com`) → `S3_ENDPOINT`
+4. Variáveis a configurar na API:
+   - `S3_BUCKET=brpetrus-documentos`
+   - `S3_REGION=auto` (valor exigido pelo R2, não é uma região real)
+   - `S3_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com`
+   - `S3_ACCESS_KEY` / `S3_SECRET_KEY` do token gerado
+   - `S3_FORCE_PATH_STYLE=true`
 
 ## 4. E-mail transacional (Resend)
 
