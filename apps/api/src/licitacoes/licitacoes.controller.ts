@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Response } from "express";
 import { z } from "zod";
 import {
   buscarLicitacoesFiltroSchema,
@@ -11,6 +13,8 @@ import { CurrentUser, type AuthenticatedUser } from "../common/decorators/curren
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { LicitacoesService } from "./licitacoes.service";
 import { EventosService } from "../eventos/eventos.service";
+
+const TAMANHO_MAXIMO_PLANILHA_BYTES = 5 * 1024 * 1024;
 
 const adicionarItemManualSchema = z.object({
   numero: z.number().int().positive(),
@@ -48,6 +52,16 @@ export class LicitacoesController {
     return this.licitacoesService.listar(filtro);
   }
 
+  @Get("itens/modelo-planilha")
+  async baixarModeloPlanilhaItens(@Res() res: Response) {
+    const buffer = await this.licitacoesService.gerarModeloPlanilhaItens();
+    res.set({
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": 'attachment; filename="modelo-itens-certame.xlsx"',
+    });
+    res.send(buffer);
+  }
+
   @Get(":id")
   buscar(@Param("id") id: string) {
     return this.licitacoesService.buscarPorId(id);
@@ -69,5 +83,12 @@ export class LicitacoesController {
     @Body(new ZodValidationPipe(adicionarItemManualSchema)) body: z.infer<typeof adicionarItemManualSchema>,
   ) {
     return this.licitacoesService.adicionarItemManual(id, body);
+  }
+
+  @Post(":id/itens/importar-planilha")
+  @UseInterceptors(FileInterceptor("arquivo", { limits: { fileSize: TAMANHO_MAXIMO_PLANILHA_BYTES } }))
+  importarItensPlanilha(@Param("id") id: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException("Arquivo é obrigatório.");
+    return this.licitacoesService.importarItensPlanilha(id, file.buffer);
   }
 }

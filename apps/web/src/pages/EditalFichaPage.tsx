@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { RefreshCw } from "lucide-react";
+import { Download, RefreshCw, Upload } from "lucide-react";
 import { STATUS_PARTICIPACAO_LABELS } from "@petrus/shared";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -11,7 +11,9 @@ import { ApiError } from "@/lib/api-client";
 import {
   adicionarItemManual,
   atualizarItensLicitacao,
+  baixarModeloPlanilhaItens,
   buscarLicitacao,
+  importarItensPlanilha,
   listarEventosLicitacao,
 } from "@/lib/api/licitacoes";
 import { listarParticipacoesPorLicitacao } from "@/lib/api/participacoes";
@@ -163,7 +165,12 @@ export function EditalFichaPage() {
               </tbody>
             </table>
           )}
-          {licitacao.fonte === "MANUAL" && <AdicionarItemManualForm licitacaoId={licitacao.id} />}
+          {licitacao.fonte === "MANUAL" && (
+            <>
+              <ImportarPlanilhaItens licitacaoId={licitacao.id} />
+              <AdicionarItemManualForm licitacaoId={licitacao.id} />
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -223,6 +230,83 @@ function Campo({ label, valor, className }: { label: string; valor: string; clas
 
 function formatData(iso: string | null): string {
   return iso ? new Date(iso).toLocaleString("pt-BR") : "—";
+}
+
+function ImportarPlanilhaItens({ licitacaoId }: { licitacaoId: string }) {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [baixando, setBaixando] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (arquivo: File) => importarItensPlanilha(licitacaoId, arquivo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["licitacoes", licitacaoId] });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+  });
+
+  return (
+    <div className="space-y-2 border-t border-ink-100 p-4">
+      <p className="text-sm font-medium text-ink-900">Importar itens por planilha</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={baixando}
+          onClick={async () => {
+            setBaixando(true);
+            try {
+              await baixarModeloPlanilhaItens();
+            } finally {
+              setBaixando(false);
+            }
+          }}
+        >
+          <Download className="h-3.5 w-3.5" />
+          Baixar modelo
+        </Button>
+        <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border border-ink-100 bg-white px-3 text-sm font-medium text-ink-900 hover:bg-ink-50">
+          <Upload className="h-3.5 w-3.5" />
+          {mutation.isPending ? "Importando…" : "Escolher planilha (.xlsx)"}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx"
+            className="hidden"
+            disabled={mutation.isPending}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              if (arquivo) mutation.mutate(arquivo);
+            }}
+          />
+        </label>
+      </div>
+
+      {mutation.error && (
+        <p className="text-sm text-red-600">
+          {mutation.error instanceof ApiError ? mutation.error.message : "Erro ao importar planilha."}
+        </p>
+      )}
+
+      {mutation.data && (
+        <div className="text-sm">
+          <p className="text-emerald-700">
+            {mutation.data.criados} item(ns) criado(s), {mutation.data.atualizados} atualizado(s).
+          </p>
+          {mutation.data.erros.length > 0 && (
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-red-600">
+              {mutation.data.erros.map((erro) => (
+                <li key={erro.linha}>
+                  Linha {erro.linha}: {erro.mensagem}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AdicionarItemManualForm({ licitacaoId }: { licitacaoId: string }) {

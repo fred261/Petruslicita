@@ -2,12 +2,13 @@ import type {
   BuscarLicitacoesFiltro,
   CriarLicitacaoManualInput,
   EventoResponse,
+  ImportarItensPlanilhaResponse,
   ItemResponse,
   LicitacaoComItensResponse,
   LicitacaoResponse,
   SincronizarPncpInput,
 } from "@petrus/shared";
-import { apiFetch } from "../api-client";
+import { apiDownloadBlob, apiFetch, apiUpload } from "../api-client";
 
 export function listarLicitacoes(filtro: BuscarLicitacoesFiltro) {
   const params = new URLSearchParams();
@@ -41,6 +42,24 @@ export function adicionarItemManual(
   item: { numero: number; descricao: string; unidadeMedida?: string; quantidade: number },
 ) {
   return apiFetch<ItemResponse>(`/licitacoes/${id}/itens`, { method: "POST", body: JSON.stringify(item) });
+}
+
+export async function baixarModeloPlanilhaItens() {
+  const blob = await apiDownloadBlob("/licitacoes/itens/modelo-planilha");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "modelo-itens-certame.xlsx";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export function importarItensPlanilha(id: string, arquivo: File) {
+  const formData = new FormData();
+  formData.append("arquivo", arquivo);
+  return apiUpload<ImportarItensPlanilhaResponse>(`/licitacoes/${id}/itens/importar-planilha`, formData);
 }
 
 export function listarEventosLicitacao(id: string) {
