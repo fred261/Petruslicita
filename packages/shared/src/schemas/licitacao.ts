@@ -14,6 +14,13 @@ export const itemResponseSchema = z.object({
 });
 export type ItemResponse = z.infer<typeof itemResponseSchema>;
 
+export const importarItensPlanilhaResponseSchema = z.object({
+  criados: z.number(),
+  atualizados: z.number(),
+  erros: z.array(z.object({ linha: z.number(), mensagem: z.string() })),
+});
+export type ImportarItensPlanilhaResponse = z.infer<typeof importarItensPlanilhaResponseSchema>;
+
 export const licitacaoResponseSchema = z.object({
   id: z.string(),
   fonte: z.enum(["PNCP", "MANUAL"]),

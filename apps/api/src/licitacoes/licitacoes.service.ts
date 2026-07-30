@@ -1,7 +1,8 @@
-import { BadGatewayException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadGatewayException, BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   BuscarLicitacoesFiltro,
   CriarLicitacaoManualInput,
+  ImportarItensPlanilhaResponse,
   ItemResponse,
   LicitacaoComItensResponse,
   LicitacaoResponse,
@@ -9,6 +10,7 @@ import type {
 } from "@petrus/shared";
 import { UF_TO_REGIAO, type Uf } from "@petrus/shared";
 import { Prisma } from "@prisma/client";
+import ExcelJS from "exceljs";
 import { PrismaService } from "../prisma/prisma.service";
 import { EventosService } from "../eventos/eventos.service";
 import { PncpAdapter } from "./portal-adapters/pncp/pncp.adapter";
@@ -19,6 +21,15 @@ interface SincronizacaoResumo {
   encontradas: number;
   criadas: number;
   atualizadas: number;
+}
+
+/** Remove acentos, espaços e caixa para comparar cabeçalhos de planilha com tolerância. */
+function normalizarCabecalho(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
 @Injectable()
@@ -296,6 +307,117 @@ export class LicitacoesService {
       },
     });
     return this.itemParaResposta(criado);
+  }
+
+  /** Gera o modelo de planilha (.xlsx) com as colunas esperadas por importarItensPlanilha. */
+  async gerarModeloPlanilhaItens(): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Itens");
+    sheet.addRow(["Número", "Descrição", "Unidade de Medida", "Quantidade", "Valor Unitário Estimado"]);
+    sheet.addRow([1, "Exemplo: caneca de porcelana 300ml", "UN", 100, 12.5]);
+    sheet.getRow(1).font = { bold: true };
+    sheet.columns.forEach((col) => (col.width = 28));
+    return Buffer.from(await workbook.xlsx.writeBuffer());
+  }
+
+  /**
+   * Importa/atualiza itens em lote a partir de uma planilha .xlsx (colunas do
+   * modelo gerado por gerarModeloPlanilhaItens). Faz upsert por número do item
+   * — reenviar uma planilha corrigida atualiza os itens já existentes em vez
+   * de duplicar. Linhas inválidas são reportadas, não interrompem o lote.
+   */
+  async importarItensPlanilha(licitacaoId: string, buffer: Buffer): Promise<ImportarItensPlanilhaResponse> {
+    const licitacao = await this.prisma.licitacao.findUnique({ where: { id: licitacaoId } });
+    if (!licitacao) throw new NotFoundException("Licitação não encontrada.");
+
+    const workbook = new ExcelJS.Workbook();
+    try {
+      await workbook.xlsx.load(buffer as never);
+    } catch {
+      throw new BadRequestException("Não foi possível ler o arquivo — envie uma planilha .xlsx válida.");
+    }
+    const sheet = workbook.worksheets[0];
+    if (!sheet || sheet.rowCount < 2) {
+      throw new BadRequestException("Planilha vazia. Baixe o modelo e preencha ao menos uma linha de item.");
+    }
+
+    const cabecalho: string[] = [];
+    sheet.getRow(1).eachCell({ includeEmpty: true }, (cell, col) => {
+      cabecalho[col] = normalizarCabecalho(String(cell.value ?? ""));
+    });
+    const idxNumero = cabecalho.indexOf("numero");
+    const idxDescricao = cabecalho.indexOf("descricao");
+    const idxUnidade = cabecalho.indexOf("unidademedida");
+    const idxQuantidade = cabecalho.indexOf("quantidade");
+    const idxValorUnitario = cabecalho.indexOf("valorunitarioestimado");
+
+    if (idxNumero === -1 || idxDescricao === -1 || idxQuantidade === -1) {
+      throw new BadRequestException(
+        "A planilha precisa ter as colunas Número, Descrição e Quantidade (baixe o modelo para conferir os nomes exatos).",
+      );
+    }
+
+    let criados = 0;
+    let atualizados = 0;
+    const erros: { linha: number; mensagem: string }[] = [];
+
+    for (let linha = 2; linha <= sheet.rowCount; linha++) {
+      const row = sheet.getRow(linha);
+      const vazia = row.values === undefined || (row.values as unknown[]).every((v) => v === undefined || v === null || v === "");
+      if (vazia) continue;
+
+      const numero = Number(row.getCell(idxNumero).value);
+      const descricao = String(row.getCell(idxDescricao).value ?? "").trim();
+      const quantidade = Number(row.getCell(idxQuantidade).value);
+      const unidadeMedida = idxUnidade !== -1 ? String(row.getCell(idxUnidade).value ?? "").trim() || null : null;
+      const valorRaw = idxValorUnitario !== -1 ? row.getCell(idxValorUnitario).value : null;
+      const valorUnitarioEstimado =
+        valorRaw !== null && valorRaw !== undefined && String(valorRaw).trim() !== "" ? Number(valorRaw) : null;
+
+      if (!Number.isInteger(numero) || numero <= 0) {
+        erros.push({ linha, mensagem: "Número do item inválido ou em branco." });
+        continue;
+      }
+      if (!descricao) {
+        erros.push({ linha, mensagem: "Descrição em branco." });
+        continue;
+      }
+      if (!Number.isFinite(quantidade) || quantidade <= 0) {
+        erros.push({ linha, mensagem: "Quantidade inválida ou em branco." });
+        continue;
+      }
+      if (valorUnitarioEstimado !== null && !Number.isFinite(valorUnitarioEstimado)) {
+        erros.push({ linha, mensagem: "Valor unitário estimado inválido." });
+        continue;
+      }
+
+      const existente = await this.prisma.item.findUnique({
+        where: { licitacaoId_numero: { licitacaoId, numero } },
+      });
+
+      if (existente) {
+        await this.prisma.item.update({
+          where: { id: existente.id },
+          data: { descricao, unidadeMedida, quantidade, valorUnitarioEstimado, origem: "MANUAL" },
+        });
+        atualizados += 1;
+      } else {
+        await this.prisma.item.create({
+          data: { licitacaoId, numero, descricao, unidadeMedida, quantidade, valorUnitarioEstimado, origem: "MANUAL" },
+        });
+        criados += 1;
+      }
+    }
+
+    if (criados + atualizados > 0) {
+      await this.eventos.registrar({
+        tipo: "ITENS_IMPORTADOS_PLANILHA",
+        descricao: `${criados} item(ns) criado(s) e ${atualizados} atualizado(s) via planilha.`,
+        licitacaoId,
+      });
+    }
+
+    return { criados, atualizados, erros };
   }
 
   regiaoDaUf(uf: string): string | null {
