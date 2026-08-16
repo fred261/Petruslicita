@@ -13,9 +13,11 @@
  *      como fica a tela quando o login FALHA (mensagem de erro exata) —
  *      se puder, tente logar com senha errada de propósito uma vez e me
  *      manda o HTML/print da mensagem que aparece.
- *   2. Tela de seleção de CNPJ/empresa (como aparece a lista, o que se clica)
- *   3. Menu/tela de "Emitir NFS-e" (onde essa opção fica)
- *   4. Tela de seleção do cliente/tomador já cadastrado (busca? dropdown?)
+ *   2. [OK] Modal "Selecione Inscrição" mapeado (ver SELECAO_EMPRESA_SELECTORS)
+ *   3. [OK] Home com os 4 "hot-links", incluindo "Emitir NFS-e", mapeada
+ *   4. Tela de seleção do cliente/tomador já cadastrado (busca? dropdown?) —
+ *      próximo passo: clique em "Emitir NFS-e" e me manda o HTML da tela
+ *      seguinte
  *   5. Formulário da nota (nomes exatos de cada campo: discriminação do
  *      serviço, valor, alíquota, item da lista de serviço, data de
  *      competência, etc. — e a ordem/paginação entre eles, se houver)
@@ -59,15 +61,35 @@ export const LOGIN_SELECTORS = {
   indicadorLoginFalhou: "text=usuário ou senha inválidos",
 };
 
+// IMPORTANTE: a partir daqui (dentro de /grpfor/*) o sistema é JSF/RichFaces
+// com AJAX parcial — a maioria dos cliques dispara A4J.AJAX.Submit(...) via
+// onclick, SEM navegação de página inteira. Por isso os steps depois do
+// login não usam page.waitForNavigation(); usam waitFor de elementos
+// aparecendo/sumindo (ex.: o modal fechar). Também evitamos os ids
+// "j_idNNN" gerados automaticamente pelo JSF (mudam entre views) e
+// preferimos atributos estáveis como title="..." e classes semânticas.
 export const SELECAO_EMPRESA_SELECTORS = {
-  // TODO: como o CNPJ é escolhido — lista de links? dropdown? Preencher com o padrão real.
-  // Placeholder assume um link/linha de tabela contendo o CNPJ.
-  linhaEmpresaPorCnpj: (cnpj: string) => `text=${cnpj}`,
+  // CONFIRMADO. No primeiro login (sem inscrição ainda escolhida) o modal
+  // "Selecione Inscrição" abre sozinho. Se já estiver fechado, este botão
+  // (o ícone de troca ao lado de "Selecione uma inscrição") abre de novo.
+  botaoAbrirTrocaInscricao: 'a[title="Alterar Inscrição Atual"]',
+  modalContainer: "#alteraInscricaoModalContainer",
+
+  // A tabela do modal lista CNPJ/CPF, Inscrição e Razão Social/Nome, um por
+  // linha. O CNPJ aparece formatado (99.999.999/9999-99). Cada linha tem um
+  // link com title="Selecionar" (ícone de check) que efetivamente escolhe
+  // aquela empresa.
+  linhaEmpresaPorCnpj: (cnpjFormatado: string) => `tr:has-text("${cnpjFormatado}")`,
+  linkSelecionarNaLinha: 'a[title="Selecionar"]',
 };
 
 export const MENU_SELECTORS = {
-  // TODO: caminho de navegação até a emissão de NFS-e (pode ser um menu lateral)
-  linkEmitirNota: "text=Emitir NFS-e",
+  // CONFIRMADO. É um dos 4 quadros "hot-links" da home (Emitir/Substituir/
+  // Cancelar/Consultar NFS-e). Não tem <a href> nem onclick visível no HTML
+  // (o clique deve ser tratado por JS externo/delegação) — escopamos pelo
+  // texto dentro do container .hot-links-box, que deve funcionar via bubble
+  // do evento de clique independente de onde o listener real está.
+  linkEmitirNota: '.hot-links-box:has-text("Emitir NFS-e")',
 };
 
 export const SELECAO_CLIENTE_SELECTORS = {
