@@ -43,7 +43,8 @@ export async function executarEmissao(notaId: string): Promise<void> {
     await preencherFormularioNota(sessao.page, {
       discriminacaoServico: nota.discriminacaoServico,
       valorServico: Number(nota.valorServico),
-      aliquotaIss: nota.aliquotaIss ? Number(nota.aliquotaIss) : undefined,
+      // itemListaServico guarda a descrição do CNAE (ver comentário em
+      // preencher-nota.step.ts) — não é mais um código arbitrário.
       itemListaServico: nota.itemListaServico ?? undefined,
       dataCompetencia: nota.dataCompetencia ?? undefined,
       observacoes: nota.observacoes ?? undefined,

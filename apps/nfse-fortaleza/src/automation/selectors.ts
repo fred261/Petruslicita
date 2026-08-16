@@ -15,13 +15,20 @@
  *      manda o HTML/print da mensagem que aparece.
  *   2. [OK] Modal "Selecione Inscrição" mapeado (ver SELECAO_EMPRESA_SELECTORS)
  *   3. [OK] Home com os 4 "hot-links", incluindo "Emitir NFS-e", mapeada
- *   4. Tela de seleção do cliente/tomador já cadastrado (busca? dropdown?) —
- *      próximo passo: clique em "Emitir NFS-e" e me manda o HTML da tela
- *      seguinte
- *   5. Formulário da nota (nomes exatos de cada campo: discriminação do
- *      serviço, valor, alíquota, item da lista de serviço, data de
- *      competência, etc. — e a ordem/paginação entre eles, se houver)
- *   6. Tela final de revisão + botão de confirmar/emitir
+ *   4. [OK] Formulário "Emitir NFS-e" mapeado — tem 3 abas (Tomador,
+ *      Serviço, Valores). Busca de cliente é autocomplete (RichFaces
+ *      Suggestion), não dropdown simples.
+ *   5. [OK] Campos do formulário mapeados (ver FORM_NOTA_SELECTORS). O
+ *      "objeto" da nota não é um campo livre só — tem um select de CNAE
+ *      (define a alíquota automaticamente) + a descrição livre do serviço.
+ *   6. [PARCIAL] O botão "Validar Campos Obrigatórios da NFS-e" abre um
+ *      modal de confirmação ("Você confirma a geração deste documento?")
+ *      — isso é a nossa tela de revisão. Falta: depois de clicar "Sim"
+ *      nesse modal, uma área (id emitirnfseForm:divEmitirNota) deveria
+ *      mostrar o botão final de emitir — ainda não vi essa tela. Próximo
+ *      passo: no site, preencha um exemplo de nota até o fim, clique em
+ *      "Validar...", depois "Sim" no modal, e me manda o HTML do que
+ *      aparece a seguir.
  *   7. Tela de sucesso (onde aparece o número da nota emitida / link do PDF)
  *
  * Depois que eu tiver isso, preencho os seletores abaixo e o robô fica
@@ -92,28 +99,60 @@ export const MENU_SELECTORS = {
   linkEmitirNota: '.hot-links-box:has-text("Emitir NFS-e")',
 };
 
+// CONFIRMADO. Tela "Emitir NFS-e" (aba Tomador, ativa por padrão). A busca
+// tem 4 modos via rádio (CPF/CNPJ/Nome ou Razão Social/Inscrição Municipal)
+// — usamos "Nome ou Razão Social" (índice 2) pra buscar pelo nome do
+// cliente. Digitar no campo dispara um autocomplete (RichFaces Suggestion);
+// clicar no item da lista de sugestão carrega os dados do cliente na tela
+// via AJAX (não precisa clicar em nada mais pra "confirmar" a escolha).
 export const SELECAO_CLIENTE_SELECTORS = {
-  // TODO: campo de busca de cliente cadastrado + como selecionar o resultado
-  campoBuscaCliente: 'input[name="tomador"]',
-  resultadoClientePorNome: (nome: string) => `text=${nome}`,
+  radioTipoBuscaNomeRazaoSocial: '#emitirnfseForm\\:tipoPesquisaTomadorRb\\:2',
+  campoBusca: '#emitirnfseForm\\:cpfPesquisaTomador',
+  // Caixa de sugestões do RichFaces que aparece abaixo do campo de busca.
+  caixaSugestao: '#emitirnfseForm\\:j_id216',
+  // Dentro da caixa, cada sugestão é uma linha de tabela — casamos pelo texto.
+  sugestaoPorTexto: (texto: string) => `#emitirnfseForm\\:j_id216 :text("${texto}")`,
+  botaoCadastrarNovoCliente: 'input[value="Cadastrar Novo Cliente"]',
 };
 
+// CONFIRMADO. Aba "Serviço" e aba "Valores" do mesmo formulário
+// (emitirnfseForm) — trocar de aba é só um clique, sem reload. O "objeto"
+// da nota não é um único campo livre: primeiro escolhe-se o CNAE (que
+// define a alíquota automaticamente), depois preenche a descrição livre.
 export const FORM_NOTA_SELECTORS = {
-  // TODO: nomes reais de cada campo do formulário da nota
-  campoDiscriminacaoServico: 'textarea[name="discriminacao"]',
-  campoValorServico: 'input[name="valorServico"]',
-  campoAliquotaIss: 'input[name="aliquota"]',
-  campoItemListaServico: 'select[name="itemLista"]',
-  campoDataCompetencia: 'input[name="dataCompetencia"]',
-  campoObservacoes: 'textarea[name="observacoes"]',
-  botaoAvancar: "text=Avançar",
+  // Cabeçalhos das abas (clique troca via RichFaces.switchTab, sem navegação)
+  abaServico: "#emitirnfseForm\\:abaServico_lbl",
+  abaValores: "#emitirnfseForm\\:abaValores_lbl",
+
+  // --- Aba Serviço ---
+  comboMesCompetencia: "#emitirnfseForm\\:comboEscolherMesCompetencia",
+  comboAnoCompetencia: "#emitirnfseForm\\:comboEscolherAnoCompetencia",
+  // Select de CNAE — as opções são descrições de atividade (ex.:
+  // "CONSULTORIA EM TECNOLOGIA DA INFORMAÇÃO"), escolhidas por texto visível,
+  // não por um código que o usuário digitaria. Existe também um botão
+  // "Pesquisar" (title="Pesquisar CNAE") que abre um modal de busca — não
+  // mapeado ainda, só necessário se o CNAE não estiver nas ~12 opções da
+  // lista curta já carregada.
+  comboCnae: "#emitirnfseForm\\:comboEscolherAtividadeCpbs",
+  campoDescricaoServico: "#emitirnfseForm\\:idDescricaoServico",
+
+  // --- Aba Valores ---
+  campoValorServico: "#emitirnfseForm\\:idValorServicoPrestado", // maskMoney R$
+  botaoValidar: "#emitirnfseForm\\:btnCalcular", // "Validar Campos Obrigatórios da NFS-e"
 };
 
+// PARCIAL. O botão "Validar Campos Obrigatórios da NFS-e" abre este modal
+// de confirmação — na prática é a nossa "tela de revisão". TODO: mapear o
+// que acontece depois de clicar "Sim" aqui (a área emitirnfseForm:divEmitirNota
+// deveria mostrar o botão final de emitir, ainda não vista).
 export const CONFIRMACAO_SELECTORS = {
-  // TODO: tela final de revisão antes de emitir
-  botaoConfirmarEmissao: "text=Confirmar e Emitir",
-  // TODO: onde aparece o número da nota / link do PDF após sucesso
-  indicadorSucesso: "text=Nota emitida com sucesso",
+  modalConfirmacao: "#emitirnfseForm\\:confirmacao_customizadaContainer",
+  botaoSimNoModal: '#emitirnfseForm\\:confirmacao_customizadaContainer input[value="Sim"]',
+  botaoNaoNoModal: '#emitirnfseForm\\:confirmacao_customizadaContainer input[value="Não"]',
+  // TODO: tela final pós-"Sim" — botão de emitir de fato, indicador de
+  // sucesso e onde aparece o número da nota / link do PDF.
+  botaoConfirmarEmissao: "text=TODO",
+  indicadorSucesso: "text=TODO",
   numeroNotaEmitida: "[data-testid=numero-nota]",
   linkPdfNota: "a:has-text('Baixar PDF')",
 };
