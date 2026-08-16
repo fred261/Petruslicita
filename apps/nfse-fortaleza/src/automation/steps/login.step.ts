@@ -6,12 +6,17 @@ export interface Credenciais {
   senha: string;
 }
 
-/** Loga no portal. Lança erro se o site indicar usuário/senha inválidos. */
+/** Loga no portal. O login é OAuth2: clicamos em "Fazer login" na página
+ * inicial da SEFIN, o site redireciona para o provedor de identidade
+ * (TODO: confirmar se é gov.br ou outro), e é lá que entram usuário/senha
+ * de verdade. Depois do login o provedor redireciona de volta ao portal. */
 export async function fazerLogin(page: Page, credenciais: Credenciais): Promise<void> {
-  await page.goto(PORTAL.loginUrl);
+  await page.goto(PORTAL.baseUrl);
+  await Promise.all([page.waitForNavigation(), page.click(LOGIN_SELECTORS.botaoFazerLogin)]);
+
   await page.fill(LOGIN_SELECTORS.campoUsuario, credenciais.usuario);
   await page.fill(LOGIN_SELECTORS.campoSenha, credenciais.senha);
-  await page.click(LOGIN_SELECTORS.botaoEntrar);
+  await Promise.all([page.waitForNavigation(), page.click(LOGIN_SELECTORS.botaoEntrar)]);
 
   const falhou = page
     .locator(LOGIN_SELECTORS.indicadorLoginFalhou)

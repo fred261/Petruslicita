@@ -8,7 +8,8 @@
  * melhor ainda, o HTML — botão direito > "Inspecionar" > copiar o
  * elemento) de cada uma destas telas, NUNCA com usuário/senha visíveis:
  *
- *   1. Tela de login (URL + campos de usuário/senha + botão entrar)
+ *   1. [PARCIAL] Botão "Fazer login" da página inicial já mapeado. Falta:
+ *      URL base do portal, e a tela do provedor OAuth2 (usuário/senha reais)
  *   2. Tela de seleção de CNPJ/empresa (como aparece a lista, o que se clica)
  *   3. Menu/tela de "Emitir NFS-e" (onde essa opção fica)
  *   4. Tela de seleção do cliente/tomador já cadastrado (busca? dropdown?)
@@ -22,17 +23,28 @@
  * funcional de ponta a ponta.
  */
 
+// CONFIRMADO: o portal usa OAuth2 (não é usuário/senha na própria página).
+// A página inicial só tem um botão "Fazer login" que aponta para
+// /grpfor/oauth2/login — isso redireciona para um provedor de identidade
+// separado (bem provável gov.br), onde ficam os campos reais de
+// usuário/senha. TODO: mapear a URL base do portal e a tela pós-redirect.
 export const PORTAL = {
-  // TODO: confirmar URL exata (login pode ficar num subdomínio separado, ex. sso.fortaleza.ce.gov.br)
-  loginUrl: "https://TODO-preencher-url-real-do-portal-iss-fortaleza/login",
+  // TODO: preencher a URL base real (domínio da página com o botão "Fazer login")
+  baseUrl: "https://TODO-preencher-url-real-do-portal-iss-fortaleza",
+  caminhoOauthLogin: "/grpfor/oauth2/login",
 };
 
 export const LOGIN_SELECTORS = {
-  // TODO: seletores reais. Os valores abaixo são só exemplos plausíveis.
+  // Página inicial: botão que dispara o redirect OAuth2.
+  botaoFazerLogin: "a.btn-login",
+
+  // TODO: mapear a tela seguinte (provavelmente em outro domínio, ex.
+  // sso.acesso.gov.br) — campos reais de usuário/senha ficam lá, não aqui.
   campoUsuario: 'input[name="usuario"]',
   campoSenha: 'input[name="senha"]',
   botaoEntrar: 'button[type="submit"]',
-  // Texto/elemento que confirma que o login deu certo (ex.: nome do usuário no topo)
+  // Texto/elemento que confirma que o login deu certo, já de volta no portal
+  // da SEFIN (ex.: nome do usuário no topo, ou o botão "Fazer login" sumiu)
   indicadorLoginOk: "text=Sair",
   // Texto/elemento que aparece quando o login falha (usuário/senha errados)
   indicadorLoginFalhou: "text=usuário ou senha inválidos",
