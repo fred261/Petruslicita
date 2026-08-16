@@ -8,8 +8,8 @@
  * melhor ainda, o HTML — botão direito > "Inspecionar" > copiar o
  * elemento) de cada uma destas telas, NUNCA com usuário/senha visíveis:
  *
- *   1. [PARCIAL] Botão "Fazer login" da página inicial já mapeado. Falta:
- *      URL base do portal, e a tela do provedor OAuth2 (usuário/senha reais)
+ *   1. [PARCIAL] URL base e botão "Fazer login" já mapeados. Falta: a tela
+ *      do provedor OAuth2 pós-redirect (campos reais de usuário/senha)
  *   2. Tela de seleção de CNPJ/empresa (como aparece a lista, o que se clica)
  *   3. Menu/tela de "Emitir NFS-e" (onde essa opção fica)
  *   4. Tela de seleção do cliente/tomador já cadastrado (busca? dropdown?)
@@ -29,8 +29,10 @@
 // separado (bem provável gov.br), onde ficam os campos reais de
 // usuário/senha. TODO: mapear a URL base do portal e a tela pós-redirect.
 export const PORTAL = {
-  // TODO: preencher a URL base real (domínio da página com o botão "Fazer login")
-  baseUrl: "https://TODO-preencher-url-real-do-portal-iss-fortaleza",
+  // CONFIRMADO. Nota: o jsessionid/cid do link original são parâmetros de
+  // sessão dinâmicos (JBoss Seam) — não fazem sentido fixos aqui, cada
+  // execução do robô gera os seus ao navegar.
+  baseUrl: "https://iss.fortaleza.ce.gov.br/grpfor/login.seam",
   caminhoOauthLogin: "/grpfor/oauth2/login",
 };
 
