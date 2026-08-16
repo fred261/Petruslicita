@@ -8,8 +8,11 @@
  * melhor ainda, o HTML — botão direito > "Inspecionar" > copiar o
  * elemento) de cada uma destas telas, NUNCA com usuário/senha visíveis:
  *
- *   1. [PARCIAL] URL base e botão "Fazer login" já mapeados. Falta: a tela
- *      do provedor OAuth2 pós-redirect (campos reais de usuário/senha)
+ *   1. [OK] URL base, botão "Fazer login" e formulário de usuário/senha
+ *      (Keycloak, idp2.sefin.fortaleza.ce.gov.br) mapeados. Falta só saber
+ *      como fica a tela quando o login FALHA (mensagem de erro exata) —
+ *      se puder, tente logar com senha errada de propósito uma vez e me
+ *      manda o HTML/print da mensagem que aparece.
  *   2. Tela de seleção de CNPJ/empresa (como aparece a lista, o que se clica)
  *   3. Menu/tela de "Emitir NFS-e" (onde essa opção fica)
  *   4. Tela de seleção do cliente/tomador já cadastrado (busca? dropdown?)
@@ -40,15 +43,19 @@ export const LOGIN_SELECTORS = {
   // Página inicial: botão que dispara o redirect OAuth2.
   botaoFazerLogin: "a.btn-login",
 
-  // TODO: mapear a tela seguinte (provavelmente em outro domínio, ex.
-  // sso.acesso.gov.br) — campos reais de usuário/senha ficam lá, não aqui.
-  campoUsuario: 'input[name="usuario"]',
-  campoSenha: 'input[name="senha"]',
-  botaoEntrar: 'button[type="submit"]',
-  // Texto/elemento que confirma que o login deu certo, já de volta no portal
-  // da SEFIN (ex.: nome do usuário no topo, ou o botão "Fazer login" sumiu)
+  // CONFIRMADO: tela do Keycloak (idp2.sefin.fortaleza.ce.gov.br/realms/sefin).
+  // O login é feito por CPF (não é um "usuário" genérico), com máscara
+  // 999.999.999-99 aplicada via jquery.inputmask — por isso usamos page.type()
+  // no lugar de page.fill() (fill não dispara os eventos de tecla que o
+  // plugin de máscara escuta).
+  campoUsuario: "#username", // CPF
+  campoSenha: "#password",
+  botaoEntrar: "#botao-entrar",
+  // TODO: confirmar texto/elemento pós-login, de volta no portal da SEFIN
+  // (ex.: nome do usuário no topo, menu principal aparecendo, etc.)
   indicadorLoginOk: "text=Sair",
-  // Texto/elemento que aparece quando o login falha (usuário/senha errados)
+  // TODO: confirmar a mensagem de erro real do Keycloak quando login falha
+  // (geralmente fica na própria página, ex. div.alert-error ou #input-error)
   indicadorLoginFalhou: "text=usuário ou senha inválidos",
 };
 
