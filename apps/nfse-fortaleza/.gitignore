@@ -1,0 +1,8 @@
+node_modules/
+dist/
+generated/
+dev.db
+dev.db-journal
+screenshots/
+.env
+*.tsbuildinfo

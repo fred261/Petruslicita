@@ -1,0 +1,97 @@
+// Banco do robô de emissão de NFS-e (Fortaleza/SEFIN). Por padrão usa SQLite
+// (arquivo local, zero setup). Para produção, troque para Postgres via
+// DATABASE_URL no .env (provider = "postgresql").
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Uma empresa (CNPJ) da qual você emite notas. As credenciais de login do
+// site da SEFIN ficam criptografadas (ver src/crypto/secret-box.ts) — nunca
+// gravamos usuário/senha em texto puro.
+model Empresa {
+  id        String   @id @default(cuid())
+  cnpj      String   @unique
+  razaoSocial String
+  apelido   String? // nome curto pra escolher rápido no CLI
+
+  // Credenciais do site da SEFIN (login único que dá acesso a este CNPJ,
+  // ou login específico da empresa — depende de como o portal funciona).
+  sefinUsuarioCriptografado String
+  sefinSenhaCriptografada   String
+
+  // Se true, notas dessa empresa podem rodar em modo automático (sem pausa
+  // de revisão humana antes do clique final de "Emitir"). Continua exigindo
+  // que TODOS os valores da nota tenham sido definidos explicitamente antes
+  // de disparar o job — nunca inventa/estima valor.
+  permiteModoAutomatico Boolean @default(false)
+
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  clientes  Cliente[]
+  notas     NotaFiscal[]
+}
+
+// Cliente (tomador do serviço) como aparece cadastrado no site da SEFIN.
+// Serve de cache local pra não precisar reconsultar o portal toda vez —
+// mas o robô sempre confere/seleciona pelo identificador do site
+// (idNoPortal) na hora de emitir, nunca confia cegamente no cache.
+model Cliente {
+  id            String   @id @default(cuid())
+  empresaId     String
+  empresa       Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  idNoPortal    String   // valor/label usado para selecioná-lo no site (TODO: mapear)
+  nome          String
+  cnpjOuCpf     String?
+
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+  notas         NotaFiscal[]
+
+  @@unique([empresaId, idNoPortal])
+}
+
+// SQLite não suporta enum nativo no Prisma, então ModoEmissao/StatusNota são
+// String no banco — os valores válidos estão fixados nos tipos TypeScript em
+// src/types.ts (única fonte de verdade usada pelo código da aplicação).
+// "ModoEmissao": "SEMI_AUTOMATICO" | "AUTOMATICO"
+// "StatusNota": "RASCUNHO" | "AGUARDANDO_REVISAO" | "EMITINDO" | "EMITIDA" | "FALHOU"
+
+model NotaFiscal {
+  id          String      @id @default(cuid())
+  empresaId   String
+  empresa     Empresa     @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  clienteId   String
+  cliente     Cliente     @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+
+  // Campos genéricos do formulário da nota — nomes/estrutura ainda
+  // provisórios, serão ajustados quando mapearmos a tela real do portal.
+  discriminacaoServico String // "objeto" da nota, texto livre
+  valorServico          Float
+  aliquotaIss           Float?
+  itemListaServico      String?
+  dataCompetencia       DateTime?
+  observacoes            String?
+
+  status      String @default("RASCUNHO")
+  modo        String @default("SEMI_AUTOMATICO")
+
+  numeroNotaEmitida String?
+  urlPdfNota        String?
+  erroMensagem      String?
+
+  screenshotRevisaoPath String? // print da tela de revisão antes da confirmação
+
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  emitidoEm   DateTime?
+}
