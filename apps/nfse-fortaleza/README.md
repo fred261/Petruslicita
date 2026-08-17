@@ -9,31 +9,25 @@ Ferramentas usadas, todas gratuitas/open source: Node.js, TypeScript,
 [Prisma](https://www.prisma.io) (banco local). Roda inteiro na sua máquina,
 sem custo, inclusive nos testes.
 
-## ⚠️ Status atual: scaffold funcional, seletores do site ainda por mapear
+## ⚠️ Status atual: seletores mapeados, falta o primeiro teste real ponta a ponta
 
-O fluxo (login → escolher CNPJ → escolher cliente → preencher → revisar →
-confirmar) já está todo implementado em `src/automation/`, mas os seletores
-CSS/texto de cada tela do portal real (`src/automation/selectors.ts`) estão
-como **placeholders** — não testei contra o site porque este ambiente não
-tem acesso de rede a `iss.fortaleza.ce.gov.br`.
+O fluxo completo (login → escolher CNPJ → escolher cliente → preencher →
+validar → confirmar → emitir) está implementado em `src/automation/` e os
+seletores reais do portal (`src/automation/selectors.ts`) já foram mapeados
+a partir de HTML de telas reais do site (inclusive uma emissão real de
+teste). Build, typecheck e testes unitários passam.
 
-### O que preciso de você para terminar o mapeamento
+O que **ainda não foi validado** é rodar o robô de ponta a ponta de verdade
+(este ambiente de desenvolvimento não tem acesso de rede a
+`iss.fortaleza.ce.gov.br`) — isso só dá pra fazer na sua máquina. Veja
+"Como rodar" abaixo e o roteiro de teste em modo semi-automático.
 
-Para cada uma destas telas, me mande **print de tela** (ideal: também o HTML
-do elemento — botão direito > Inspecionar > Copiar > Copiar elemento),
-**nunca com usuário/senha reais visíveis**:
+Pontos ainda em aberto (não bloqueiam o teste, mas valem nota):
 
-1. Tela de login (e a URL exata)
-2. Tela de seleção de CNPJ/empresa
-3. Onde fica a opção "Emitir NFS-e" no menu
-4. Tela de seleção do cliente/tomador já cadastrado (é busca? dropdown?)
-5. Formulário da nota (todos os campos, nomes exatos, se é uma página só
-   ou várias etapas)
-6. Tela final de revisão + botão de confirmar
-7. Tela de sucesso (onde aparece o número da nota / link do PDF)
-
-Com isso eu preencho `src/automation/selectors.ts` e testamos de ponta a
-ponta em modo semi-automático.
+- Mensagem exata de erro de login inválido não foi confirmada.
+- A extração do número da nota na tela final é best-effort (ver
+  `TELA_RESULTADO_SELECTORS` em `selectors.ts`) — a fonte de verdade
+  continua sendo o próprio portal, em "Consultar NFS-e".
 
 ## Como rodar
 
@@ -88,6 +82,54 @@ Só funciona se a empresa foi cadastrada com "liberar modo automático" = sim
 (ou ajuste depois via banco/`permiteModoAutomatico`). Mesmo automático, o
 robô **nunca inventa valores** — todo campo da nota precisa ter sido
 passado explicitamente no comando.
+
+## Roteiro do primeiro teste real (rode isso na sua máquina)
+
+Este ambiente de desenvolvimento não alcança `iss.fortaleza.ce.gov.br`, então
+este primeiro teste ponta a ponta precisa ser feito por você, localmente.
+Faça em modo semi-automático (é o padrão) e com o navegador **visível**
+(`NFSE_HEADLESS=false` no `.env`, que também é o padrão) pra acompanhar cada
+passo lado a lado com a janela do robô.
+
+1. Siga "Como rodar" acima até `pnpm prisma:migrate`.
+2. Cadastre a empresa de verdade (CNPJ 68.515.819/0001-25, F. Martins
+   Consultoria e Serviços LTDA) com seu usuário/senha reais do portal:
+   ```bash
+   pnpm cli empresa:add
+   ```
+   Confirme "não" para "liberar modo automático" por enquanto.
+3. Cadastre o cliente que você já usou no teste manual (KBM Representações
+   e Comércio de Gêneros Alimentícios LTDA), com o nome **exatamente** como
+   aparece no portal:
+   ```bash
+   pnpm cli cliente:add --empresa "<apelido-que-você-deu>"
+   ```
+4. Rode uma emissão de valor baixo (ideal: não repetir o mesmo teste de
+   R$ 15.000,00 — use algo simbólico se for só validar o fluxo, ou o valor
+   real se já for a nota que você precisa emitir mesmo — lembre que emitir
+   é irreversível e tem efeito tributário real):
+   ```bash
+   pnpm cli nota:emitir \
+     --empresa "<apelido-que-você-deu>" \
+     --cliente "KBM Representações e Comércio de Gêneros Alimentícios LTDA" \
+     --valor 1.00 \
+     --objeto "SERVIÇOS COMBINADOS DE ESCRITÓRIO E APOIO ADMINISTRATIVO" \
+     --observacoes "teste de automação"
+   ```
+   O `--objeto` precisa bater com o texto exato de uma opção do dropdown de
+   CNAE no portal (é o campo `itemListaServico` internamente).
+5. Acompanhe a janela do Chromium que abre. Nos pontos em que o robô parar
+   pra confirmação no terminal, **compare com o que está na tela real**
+   antes de digitar `s`.
+6. Se algum passo falhar (seletor não encontrado, timeout, etc.), a
+   mensagem de erro no terminal deve dizer exatamente onde parou — me
+   manda essa mensagem (e, se puder, o HTML da tela naquele ponto) que eu
+   ajusto o seletor.
+7. Se tudo passar até o fim, confira a nota emitida direto no portal, em
+   "Consultar NFS-e", antes de considerar o robô confiável pra uso real.
+
+Só depois de um teste real bem-sucedido faz sentido cogitar liberar o modo
+automático para essa empresa.
 
 ## Próximos passos conhecidos (TODO)
 
