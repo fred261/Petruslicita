@@ -26,13 +26,13 @@
  *      nossa tela de revisão. Depois de "Sim", a área
  *      emitirnfseForm:divEmitirNota mostra o botão final "Confirmar Emissão
  *      de NFS-e" (btnEmitir), que já está mapeado.
- *   7. [DECISÃO] Tela de sucesso pós-emissão (número da nota / link do PDF)
- *      NÃO será mapeada por seletor — mapear exigiria emitir uma nota real
- *      de teste só pra ver o HTML, o que tem implicação tributária real.
- *      Combinado: o robô confirma que os cliques mapeados aconteceram, tira
- *      um print de auditoria logo após o clique final, e quem confere o
- *      resultado (número da nota, PDF) é você mesmo, direto no portal, em
- *      "Consultar NFS-e".
+ *   7. [OK] Tela pós-emissão mapeada (com uma emissão real) — o clique em
+ *      "Confirmar Emissão de NFS-e" redireciona pra mesma view de
+ *      "Consultar NFS-e" (pagesPublic/consultarNota.seam), com Número da
+ *      Nota / Chave de Acesso ADN / Situação no Ambiente Nacional / PDF
+ *      embutido. Extraímos isso de forma best-effort (ver
+ *      TELA_RESULTADO_SELECTORS) só como bônus de conveniência — a fonte de
+ *      verdade continua sendo o próprio portal, em "Consultar NFS-e".
  *
  * Com isso o robô já fica funcional de ponta a ponta.
  */
@@ -159,7 +159,19 @@ export const CONFIRMACAO_SELECTORS = {
   // que de fato emite o documento fiscal — é o ponto de não-retorno.
   botaoConfirmarEmissao: "#emitirnfseForm\\:btnEmitir",
   botaoAlterar: "#emitirnfseForm\\:btnAlterar",
-  // DECISÃO: não vamos mapear a tela pós-emissão por seletor (ver nota no
-  // topo do arquivo) — o robô não depende destes pra funcionar. O número da
-  // nota e o PDF são conferidos manualmente no portal, em "Consultar NFS-e".
+};
+
+// CONFIRMADO (com uma emissão real). Depois de clicar em "Confirmar Emissão
+// de NFS-e", o portal redireciona pra mesma tela de pagesPublic/consultarNota.seam
+// que aparece quando você procura a nota manualmente em "Consultar NFS-e".
+// Os ids reais dessa view (ex.: "j_id163:numNfse") são gerados pelo JSF e
+// PODEM mudar entre deploys/views — por isso usamos seletores de atributo
+// "termina com" (mais resilientes a troca do prefixo j_idNNN) em vez do id
+// exato. Extração aqui é só um bônus de conveniência/auditoria — não é a
+// fonte de verdade (essa continua sendo o próprio portal, em "Consultar NFS-e").
+export const TELA_RESULTADO_SELECTORS = {
+  numeroNota: 'input[id$=":numNfse"]',
+  chaveAcessoAdn: 'input[id$=":chaveAcesso"]',
+  situacaoAmbienteNacional: 'table td:has-text("Situação no Ambiente Nacional:") + td input',
+  linkPdf: 'object[id$=":pdfLink"]',
 };

@@ -73,9 +73,10 @@ export async function executarEmissao(notaId: string): Promise<void> {
     const screenshotFinalPath = path.join(DIR_SCREENSHOTS, `${nota.id}-final.png`);
     const resultado = await confirmarEmissao(sessao.page, screenshotFinalPath);
     await marcarEmitida(nota.id, resultado.numeroNota, resultado.urlPdf);
+    const numeroTexto = resultado.numeroNota ? `Número: ${resultado.numeroNota}` : "número não capturado automaticamente";
     console.log(
-      `Nota emitida no portal (print de auditoria em ${screenshotFinalPath}). ` +
-        `Confira o número/PDF diretamente no site, em "Consultar NFS-e".`,
+      `Nota emitida no portal (${numeroTexto}; print de auditoria em ${screenshotFinalPath}). ` +
+        `Confira sempre o resultado oficial direto no site, em "Consultar NFS-e".`,
     );
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);

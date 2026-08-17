@@ -1,11 +1,11 @@
 import type { Page } from "playwright";
-import { CONFIRMACAO_SELECTORS } from "../selectors.js";
+import { CONFIRMACAO_SELECTORS, TELA_RESULTADO_SELECTORS } from "../selectors.js";
 
 export interface ResultadoEmissao {
-  /** Opcional de propósito: decidimos não depender de extrair o número da
-   * nota por seletor (o Frederico prefere conferir/recuperar a nota direto
-   * no portal, em "Consultar NFS-e", em vez de confiar numa raspagem dessa
-   * tela). Quando disponível, fica só como registro extra. */
+  /** Opcional de propósito: a extração é best-effort (ver confirmarEmissao)
+   * — o Frederico prefere conferir/recuperar a nota direto no portal, em
+   * "Consultar NFS-e", em vez de confiar cegamente numa raspagem dessa tela.
+   * Quando disponível, fica só como registro extra de conveniência. */
   numeroNota?: string;
   urlPdf?: string;
 }
@@ -31,14 +31,14 @@ export async function capturarTelaDeRevisao(page: Page, destino: string): Promis
  * tributário real). Só deve ser chamado depois de confirmação explícita
  * (humana, no modo semi-automático; ou pela regra da empresa, no automático).
  *
- * Decisão deliberada: NÃO tentamos raspar o número da nota / link do PDF da
- * tela pós-emissão. Mapear aquela tela exigiria emitir uma nota real de
- * teste só pra ver o HTML, o que o Frederico não quer (tem implicação
- * tributária). Ele prefere recuperar a nota emitida direto no portal, em
- * "Consultar NFS-e". Por isso este step só garante que os dois cliques
- * mapeados e seguros aconteceram, tira um print de auditoria logo depois do
- * clique final (screenshotFinal, opcional), e retorna sucesso sem número —
- * quem confirma o resultado de fato é você, olhando o portal. */
+ * Depois desse clique o portal redireciona pra tela de consulta da nota
+ * (mesma view de "Consultar NFS-e"), com Número da Nota / Chave de Acesso
+ * ADN / Situação no Ambiente Nacional. A extração desses campos aqui é só
+ * um bônus de conveniência (best-effort, com timeout curto) — se não
+ * conseguirmos achar os campos, ainda assim consideramos a emissão bem
+ * sucedida (os dois cliques mapeados e seguros já aconteceram) e tiramos um
+ * print de auditoria. A fonte de verdade continua sendo o próprio portal —
+ * é lá que você deve confirmar/recuperar a nota, em "Consultar NFS-e". */
 export async function confirmarEmissao(page: Page, screenshotFinal?: string): Promise<ResultadoEmissao> {
   await page.click(CONFIRMACAO_SELECTORS.botaoSimNoModal);
   await page.locator(CONFIRMACAO_SELECTORS.modalConfirmacao).waitFor({ state: "hidden", timeout: 15000 }).catch(() => {
@@ -55,10 +55,13 @@ export async function confirmarEmissao(page: Page, screenshotFinal?: string): Pr
   // A partir daqui é o ponto de não-retorno: este clique emite o documento.
   await page.click(CONFIRMACAO_SELECTORS.botaoConfirmarEmissao);
 
-  // Dá um tempo pro AJAX da emissão terminar antes do print — não temos um
-  // seletor de "sucesso" mapeado pra esperar de forma precisa (ver TODO em
-  // selectors.ts), então usamos uma espera curta best-effort.
-  await page.waitForTimeout(3000);
+  // Best-effort: espera o campo "Número da Nota" da tela de resultado
+  // aparecer. Se não aparecer no tempo (ex.: layout mudou, demora mais,
+  // etc.), não tratamos como falha — só seguimos sem o número.
+  const campoNumeroNota = page.locator(TELA_RESULTADO_SELECTORS.numeroNota).first();
+  await campoNumeroNota.waitFor({ state: "visible", timeout: 20000 }).catch(() => {});
+
+  const numeroNota = await campoNumeroNota.inputValue().catch(() => undefined);
 
   if (screenshotFinal) {
     await page.screenshot({ path: screenshotFinal, fullPage: true }).catch(() => {
@@ -67,5 +70,5 @@ export async function confirmarEmissao(page: Page, screenshotFinal?: string): Pr
     });
   }
 
-  return {};
+  return { numeroNota: numeroNota || undefined };
 }
