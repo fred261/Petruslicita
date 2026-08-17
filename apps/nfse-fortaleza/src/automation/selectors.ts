@@ -142,16 +142,23 @@ export const FORM_NOTA_SELECTORS = {
 };
 
 // PARCIAL. O botão "Validar Campos Obrigatórios da NFS-e" abre este modal
-// de confirmação — na prática é a nossa "tela de revisão". TODO: mapear o
-// que acontece depois de clicar "Sim" aqui (a área emitirnfseForm:divEmitirNota
-// deveria mostrar o botão final de emitir, ainda não vista).
+// de confirmação — na prática é a nossa "tela de revisão". CONFIRMADO: depois
+// de clicar "Sim" aqui, o modal fecha e o formulário reaparece travado
+// (campos disabled), com a área emitirnfseForm:divEmitirNota agora populada
+// com dois botões: "Confirmar Emissão de NFS-e" (botaoConfirmarEmissao, o
+// clique que de fato emite o documento) e "Alterar" (volta a editar). TODO:
+// ainda não vi a tela que aparece DEPOIS de clicar em "Confirmar Emissão de
+// NFS-e" — é aí que deve aparecer o número da nota / link do PDF.
 export const CONFIRMACAO_SELECTORS = {
   modalConfirmacao: "#emitirnfseForm\\:confirmacao_customizadaContainer",
   botaoSimNoModal: '#emitirnfseForm\\:confirmacao_customizadaContainer input[value="Sim"]',
   botaoNaoNoModal: '#emitirnfseForm\\:confirmacao_customizadaContainer input[value="Não"]',
-  // TODO: tela final pós-"Sim" — botão de emitir de fato, indicador de
-  // sucesso e onde aparece o número da nota / link do PDF.
-  botaoConfirmarEmissao: "text=TODO",
+  // CONFIRMADO. Só aparece depois de "Sim" no modal acima. Este é o clique
+  // que de fato emite o documento fiscal — é o ponto de não-retorno.
+  botaoConfirmarEmissao: "#emitirnfseForm\\:btnEmitir",
+  botaoAlterar: "#emitirnfseForm\\:btnAlterar",
+  // TODO: tela final pós-"Confirmar Emissão de NFS-e" — indicador de
+  // sucesso e onde aparece o número da nota / link do PDF. Ainda não vista.
   indicadorSucesso: "text=TODO",
   numeroNotaEmitida: "[data-testid=numero-nota]",
   linkPdfNota: "a:has-text('Baixar PDF')",
