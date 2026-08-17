@@ -51,7 +51,13 @@ export async function marcarEmitindo(id: string) {
   return prisma.notaFiscal.update({ where: { id }, data: { status: "EMITINDO" } });
 }
 
-export async function marcarEmitida(id: string, numeroNota: string, urlPdf?: string) {
+/** numeroNota fica opcional de propósito: o portal não expõe (ou ainda não
+ * mapeamos onde expõe) o número da nota logo após a emissão de forma
+ * confiável por seletor, e o próprio usuário prefere conferir/recuperar a
+ * nota emitida direto no site (menu "Consultar NFS-e") em vez de confiar
+ * numa extração automática. O importante aqui é o status EMITIDA + o print
+ * de auditoria do momento da emissão. */
+export async function marcarEmitida(id: string, numeroNota?: string, urlPdf?: string) {
   return prisma.notaFiscal.update({
     where: { id },
     data: { status: "EMITIDA", numeroNotaEmitida: numeroNota, urlPdfNota: urlPdf, emitidoEm: new Date() },

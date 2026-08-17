@@ -2,7 +2,11 @@ import type { Page } from "playwright";
 import { CONFIRMACAO_SELECTORS } from "../selectors.js";
 
 export interface ResultadoEmissao {
-  numeroNota: string;
+  /** Opcional de propósito: decidimos não depender de extrair o número da
+   * nota por seletor (o Frederico prefere conferir/recuperar a nota direto
+   * no portal, em "Consultar NFS-e", em vez de confiar numa raspagem dessa
+   * tela). Quando disponível, fica só como registro extra. */
+  numeroNota?: string;
   urlPdf?: string;
 }
 
@@ -23,18 +27,19 @@ export async function capturarTelaDeRevisao(page: Page, destino: string): Promis
 
 /** Clica em "Sim" no modal de confirmação, e depois no botão final
  * "Confirmar Emissão de NFS-e" (emitirnfseForm:btnEmitir) — que é o clique
- * que de fato emite o documento fiscal (ponto de não-retorno). Só deve ser
- * chamado depois de confirmação explícita (humana, no modo semi-automático;
- * ou pela regra da empresa, no automático).
+ * que de fato emite o documento fiscal (ponto de não-retorno, com efeito
+ * tributário real). Só deve ser chamado depois de confirmação explícita
+ * (humana, no modo semi-automático; ou pela regra da empresa, no automático).
  *
- * TODO: ainda não mapeei o que acontece DEPOIS de clicar em "Confirmar
- * Emissão de NFS-e" — deveria aparecer o número da nota emitida e/ou um
- * link do PDF, mas essa tela ainda não foi vista. Por isso este step clica
- * em ambos os botões (que já são seguros/mapeados) e então lança erro
- * pedindo o HTML dessa última tela — a nota PODE já ter sido emitida de
- * verdade nesse ponto, então é preciso conferir manualmente antes de
- * tentar de novo, pra não duplicar. */
-export async function confirmarEmissao(page: Page): Promise<ResultadoEmissao> {
+ * Decisão deliberada: NÃO tentamos raspar o número da nota / link do PDF da
+ * tela pós-emissão. Mapear aquela tela exigiria emitir uma nota real de
+ * teste só pra ver o HTML, o que o Frederico não quer (tem implicação
+ * tributária). Ele prefere recuperar a nota emitida direto no portal, em
+ * "Consultar NFS-e". Por isso este step só garante que os dois cliques
+ * mapeados e seguros aconteceram, tira um print de auditoria logo depois do
+ * clique final (screenshotFinal, opcional), e retorna sucesso sem número —
+ * quem confirma o resultado de fato é você, olhando o portal. */
+export async function confirmarEmissao(page: Page, screenshotFinal?: string): Promise<ResultadoEmissao> {
   await page.click(CONFIRMACAO_SELECTORS.botaoSimNoModal);
   await page.locator(CONFIRMACAO_SELECTORS.modalConfirmacao).waitFor({ state: "hidden", timeout: 15000 }).catch(() => {
     throw new Error("Cliquei em \"Sim\" no modal de confirmação, mas ele não fechou como esperado. Confira manualmente.");
@@ -43,15 +48,24 @@ export async function confirmarEmissao(page: Page): Promise<ResultadoEmissao> {
   await page.locator(CONFIRMACAO_SELECTORS.botaoConfirmarEmissao).waitFor({ state: "visible", timeout: 15000 }).catch(() => {
     throw new Error(
       "Depois de \"Sim\" no modal, o botão \"Confirmar Emissão de NFS-e\" (emitirnfseForm:btnEmitir) não apareceu " +
-        "como esperado. Confira manualmente.",
+        "como esperado. Confira manualmente antes de tentar de novo.",
     );
   });
+
+  // A partir daqui é o ponto de não-retorno: este clique emite o documento.
   await page.click(CONFIRMACAO_SELECTORS.botaoConfirmarEmissao);
 
-  throw new Error(
-    "Cliquei em \"Confirmar Emissão de NFS-e\" — a essa altura o documento fiscal PODE já ter sido emitido de " +
-      "verdade no portal. A tela que aparece a seguir (onde deveria estar o número da nota e/ou o link do PDF) " +
-      "ainda não foi mapeada. NÃO tente de novo sem antes conferir manualmente no site se a nota já saiu, pra não " +
-      "duplicar. Me manda o HTML dessa tela final pra eu terminar o mapeamento.",
-  );
+  // Dá um tempo pro AJAX da emissão terminar antes do print — não temos um
+  // seletor de "sucesso" mapeado pra esperar de forma precisa (ver TODO em
+  // selectors.ts), então usamos uma espera curta best-effort.
+  await page.waitForTimeout(3000);
+
+  if (screenshotFinal) {
+    await page.screenshot({ path: screenshotFinal, fullPage: true }).catch(() => {
+      // Print de auditoria é "nice to have" — se falhar, não derruba a
+      // emissão que já aconteceu de verdade no portal.
+    });
+  }
+
+  return {};
 }

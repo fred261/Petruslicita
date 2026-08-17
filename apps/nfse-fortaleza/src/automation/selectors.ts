@@ -21,18 +21,20 @@
  *   5. [OK] Campos do formulário mapeados (ver FORM_NOTA_SELECTORS). O
  *      "objeto" da nota não é um campo livre só — tem um select de CNAE
  *      (define a alíquota automaticamente) + a descrição livre do serviço.
- *   6. [PARCIAL] O botão "Validar Campos Obrigatórios da NFS-e" abre um
- *      modal de confirmação ("Você confirma a geração deste documento?")
- *      — isso é a nossa tela de revisão. Falta: depois de clicar "Sim"
- *      nesse modal, uma área (id emitirnfseForm:divEmitirNota) deveria
- *      mostrar o botão final de emitir — ainda não vi essa tela. Próximo
- *      passo: no site, preencha um exemplo de nota até o fim, clique em
- *      "Validar...", depois "Sim" no modal, e me manda o HTML do que
- *      aparece a seguir.
- *   7. Tela de sucesso (onde aparece o número da nota emitida / link do PDF)
+ *   6. [OK] O botão "Validar Campos Obrigatórios da NFS-e" abre um modal de
+ *      confirmação ("Você confirma a geração deste documento?") — isso é a
+ *      nossa tela de revisão. Depois de "Sim", a área
+ *      emitirnfseForm:divEmitirNota mostra o botão final "Confirmar Emissão
+ *      de NFS-e" (btnEmitir), que já está mapeado.
+ *   7. [DECISÃO] Tela de sucesso pós-emissão (número da nota / link do PDF)
+ *      NÃO será mapeada por seletor — mapear exigiria emitir uma nota real
+ *      de teste só pra ver o HTML, o que tem implicação tributária real.
+ *      Combinado: o robô confirma que os cliques mapeados aconteceram, tira
+ *      um print de auditoria logo após o clique final, e quem confere o
+ *      resultado (número da nota, PDF) é você mesmo, direto no portal, em
+ *      "Consultar NFS-e".
  *
- * Depois que eu tiver isso, preencho os seletores abaixo e o robô fica
- * funcional de ponta a ponta.
+ * Com isso o robô já fica funcional de ponta a ponta.
  */
 
 // CONFIRMADO: o portal usa OAuth2 (não é usuário/senha na própria página).
@@ -157,9 +159,7 @@ export const CONFIRMACAO_SELECTORS = {
   // que de fato emite o documento fiscal — é o ponto de não-retorno.
   botaoConfirmarEmissao: "#emitirnfseForm\\:btnEmitir",
   botaoAlterar: "#emitirnfseForm\\:btnAlterar",
-  // TODO: tela final pós-"Confirmar Emissão de NFS-e" — indicador de
-  // sucesso e onde aparece o número da nota / link do PDF. Ainda não vista.
-  indicadorSucesso: "text=TODO",
-  numeroNotaEmitida: "[data-testid=numero-nota]",
-  linkPdfNota: "a:has-text('Baixar PDF')",
+  // DECISÃO: não vamos mapear a tela pós-emissão por seletor (ver nota no
+  // topo do arquivo) — o robô não depende destes pra funcionar. O número da
+  // nota e o PDF são conferidos manualmente no portal, em "Consultar NFS-e".
 };
